@@ -33,127 +33,135 @@ function App() {
     setLoading(false);
   };
 
-  // Fake complexity score (we'll replace later with real Radon)
-  const complexityScore = result ? Math.min(result.errors.length * 2, 10) : 0;
-
   return (
     <div
       style={{
         height: "100vh",
         display: "flex",
-        background: "linear-gradient(135deg, #0f172a, #020617)",
-        color: "white",
+        background: "linear-gradient(135deg, #0b1220, #030712)",
+        color: "#e2e8f0",
+        fontFamily:
+          "Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
       }}
     >
-      {/* LEFT - EDITOR */}
-      <div style={{ flex: 1, padding: "20px" }}>
-        <h1
-          style={{
-            fontSize: "28px",
-            marginBottom: "10px",
-            color: "#38bdf8",
-          }}
-        >
-          ACQR 🚀
-        </h1>
+      <div
+        style={{
+          width: "70%",
+          padding: "24px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "14px",
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: "28px",
+              fontWeight: 700,
+              letterSpacing: "0.02em",
+              color: "#f8fafc",
+            }}
+          >
+            ACQR
+          </h1>
+          <p
+            style={{
+              margin: "6px 0 0 0",
+              fontSize: "13px",
+              color: "#93c5fd",
+            }}
+          >
+            AI Code Quality Reviewer
+          </p>
+        </div>
 
         <Editor
-          height="80%"
+          height="100%"
           defaultLanguage="python"
           theme="vs-dark"
           value={code}
           onChange={(value) => setCode(value || "")}
+          options={{
+            minimap: { enabled: false },
+            fontSize: 14,
+            lineNumbersMinChars: 3,
+            scrollBeyondLastLine: false,
+          }}
         />
 
         <button
           onClick={analyzeCode}
           style={{
-            marginTop: "15px",
-            padding: "10px 20px",
-            background: "linear-gradient(90deg, #3b82f6, #06b6d4)",
-            border: "none",
-            borderRadius: "10px",
-            color: "white",
+            alignSelf: "flex-start",
+            padding: "10px 16px",
+            background: "#2563eb",
+            border: "1px solid rgba(147, 197, 253, 0.35)",
+            borderRadius: "8px",
+            color: "#eff6ff",
             cursor: "pointer",
-            fontWeight: "bold",
+            fontWeight: 600,
           }}
         >
-          {loading ? "Analyzing..." : "Analyze Code"}
+          {loading ? "Analyzing..." : "Analyze"}
         </button>
       </div>
 
-      {/* RIGHT - GLASS PANEL */}
       <div
         style={{
-          width: "38%",
-          padding: "20px",
-          backdropFilter: "blur(20px)",
-          background: "rgba(255, 255, 255, 0.05)",
-          borderLeft: "1px solid rgba(255,255,255,0.1)",
+          width: "30%",
+          padding: "24px",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          background: "rgba(15, 23, 42, 0.45)",
+          borderLeft: "1px solid rgba(148, 163, 184, 0.22)",
+          boxShadow: "0 12px 32px rgba(2, 6, 23, 0.45)",
           overflowY: "auto",
         }}
       >
-        <h2 style={{ marginBottom: "10px" }}>AI Insights 🤖</h2>
+        <h2
+          style={{
+            margin: "0 0 14px 0",
+            fontSize: "17px",
+            fontWeight: 600,
+            color: "#f8fafc",
+          }}
+        >
+          Results
+        </h2>
 
         {!result && (
-          <p style={{ color: "#9ca3af" }}>
-            Run analysis to see insights...
+          <p style={{ color: "#94a3b8", margin: 0 }}>
+            Run analysis to see errors.
           </p>
         )}
 
         {result && (
           <>
-            {/* COMPLEXITY */}
-            <div
-              style={{
-                marginBottom: "20px",
-                padding: "15px",
-                borderRadius: "10px",
-                background: "rgba(255,255,255,0.05)",
-              }}
-            >
-              <h3>⚡ Complexity Score</h3>
-              <p style={{ fontSize: "20px", color: "#38bdf8" }}>
-                {complexityScore} / 10
-              </p>
-            </div>
+            {(!result.errors || result.errors.length === 0) && (
+              <p style={{ margin: 0, color: "#94a3b8" }}>No errors found.</p>
+            )}
 
-            {/* BEGINNER FRIENDLY */}
-            <div
-              style={{
-                marginBottom: "20px",
-                padding: "15px",
-                borderRadius: "10px",
-                background: "rgba(255,255,255,0.05)",
-              }}
-            >
-              <h3>📘 Beginner-Friendly Explanation</h3>
-              <p style={{ color: "#94a3b8" }}>
-                These errors indicate that your code has some missing elements or incorrect usage.
-                Try fixing undefined variables and adding proper documentation.
-              </p>
-            </div>
-
-            {/* ERRORS */}
-            {result.errors.map((err, i) => (
+            {(result.errors || []).map((err, i) => (
               <div
                 key={i}
                 style={{
                   padding: "12px",
                   borderRadius: "10px",
                   marginBottom: "10px",
-                  background: "rgba(255,255,255,0.08)",
+                  background: "rgba(30, 41, 59, 0.38)",
+                  border: "1px solid rgba(148, 163, 184, 0.18)",
                 }}
               >
-                <p>
-                  <b>Line:</b> {err.line}
+                <p style={{ margin: "0 0 8px 0", color: "#cbd5e1", fontSize: "13px" }}>
+                  Line {err.line}
                 </p>
 
-                <p style={{ color: "#f87171", fontWeight: "bold" }}>
-                  ❌ {err.message}
+                <p style={{ margin: "0 0 8px 0", color: "#f87171", fontWeight: 600 }}>
+                  {err.message}
                 </p>
 
-                <p style={{ color: "#38bdf8" }}>
+                <p style={{ margin: 0, color: "#60a5fa" }}>
                   {err.explanation}
                 </p>
               </div>
