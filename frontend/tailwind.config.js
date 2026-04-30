@@ -31,6 +31,7 @@ export default {
       },
       animation: {
         'slide-in': 'slideIn 0.25s ease-out',
+        'slide-in-right': 'slideInRight 0.3s ease-out',
         'fade-in': 'fadeIn 0.2s ease-out',
         'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
         'glow-pulse': 'glowPulse 2s ease-in-out infinite',
@@ -39,6 +40,10 @@ export default {
         slideIn: {
           '0%': { opacity: '0', transform: 'translateY(6px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideInRight: {
+          '0%': { opacity: '0', transform: 'translateX(20px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
         },
         fadeIn: {
           '0%': { opacity: '0' },

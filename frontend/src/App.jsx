@@ -78,11 +78,28 @@ export default function App() {
   }, [code]);
 
   // ── Apply fix ─────────────────────────────────────────────────────────────
-  const applyFix = useCallback((changes) => {
+  // Accepts either:
+  //   fix.type === "replace_line" → { line, new_code }
+  //   legacy                      → changes[] with { line_start, line_end, replacement }
+  const applyFix = useCallback((fixOrChanges) => {
     const editor = editorRef.current;
     const monaco = monacoRef.current;
     if (!editor || !monaco) return;
-    editor.executeEdits("ai-fix", changes.map(c => {
+
+    // Normalise to a flat changes array
+    let changes;
+    if (Array.isArray(fixOrChanges)) {
+      // Legacy: called with err.fix.changes directly
+      changes = fixOrChanges;
+    } else if (fixOrChanges?.type === "replace_line") {
+      changes = [{ line_start: fixOrChanges.line, line_end: fixOrChanges.line, replacement: fixOrChanges.new_code }];
+    } else if (fixOrChanges?.changes) {
+      changes = fixOrChanges.changes;
+    } else {
+      return;
+    }
+
+    editor.executeEdits("acqr-fix", changes.map(c => {
       const endCol = editor.getModel().getLineMaxColumn(c.line_end);
       return { range: new monaco.Range(c.line_start, 1, c.line_end, endCol), text: c.replacement };
     }));
@@ -136,6 +153,7 @@ export default function App() {
         options: {
           isWholeLine: true,
           className: e.sev === "warning" ? "acqr-warning-line" : "acqr-error-line",
+          glyphMarginClassName: e.sev === "warning" ? "acqr-warning-glyph" : "acqr-error-glyph",
           inlineClassName: "acqr-error-underline",
           hoverMessage: { value: `$(${e.sev}) ${e.msg}` },
         },
@@ -213,7 +231,7 @@ export default function App() {
         
         {/* LEFT PANEL (Editor) */}
         <div className="w-1/2 flex flex-col p-4 bg-base border-r border-border">
-          <div className="flex-1 rounded-xl overflow-hidden border border-slate-700 bg-surface transition-all duration-200 focus-within:ring-2 focus-within:ring-blue-500/40 focus-within:border-blue-500/50">
+          <div className={`flex-1 rounded-xl overflow-hidden border bg-surface transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500/40 focus-within:border-blue-500/50 ${issueCount > 0 ? "border-red-500/50 ring-2 ring-red-500/30" : "border-slate-700"}`}>
             <Editor
               height="100%"
               defaultLanguage="python"
@@ -223,6 +241,7 @@ export default function App() {
               onMount={handleEditorMount}
               options={{
                 minimap: { enabled: false },
+                glyphMargin: true,
                 fontSize: 14,
                 fontFamily: "'JetBrains Mono', monospace",
                 lineHeight: 24,
@@ -231,7 +250,10 @@ export default function App() {
               }}
             />
           </div>
-          <div className="mt-4 flex justify-center">
+          <div className="mt-4 flex items-center justify-between px-2">
+            <span className="text-xs text-text-muted italic animate-pulse-soft">
+              Press Analyze or keep typing...
+            </span>
             <button 
               className="btn-primary px-8 py-3 text-sm transition-all duration-200 hover:scale-105 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)]" 
               onClick={runAnalysis} 

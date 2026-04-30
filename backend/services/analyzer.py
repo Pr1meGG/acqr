@@ -244,6 +244,12 @@ def validate_and_repair_fix(code: str, fix: dict) -> tuple:
         ast.parse(simulated_code)
     except SyntaxError:
         return None, None
+
+    # If any repair was made, upgrade the fix to replace_line format
+    if repaired_suggestion and len(changes) == 1:
+        c = changes[0]
+        upgraded = make_structured_fix(c["line_start"], c["replacement"])
+        return upgraded, repaired_suggestion
         
     return fix, repaired_suggestion
 
@@ -270,19 +276,12 @@ def detect_unterminated_strings(code: str) -> List[Dict]:
         issues.append({
             "line": line_num,
             "type": "syntax",
-            "message": f"Unterminated string literal",
+            "message": "Unterminated string literal",
             "root_cause": "String opened but not closed",
             "severity": "high",
             "confidence": 0.95,
             "source": ["heuristic"],
-            "fix": {
-                "type": "patch",
-                "changes": [{
-                    "line_start": line_num,
-                    "line_end": line_num,
-                    "replacement": repaired
-                }]
-            },
+            "fix": make_structured_fix(line_num, repaired),
             "explanation": f"A string starting with {quote_char!r} on this line is never closed.",
             "suggestion": f"Add closing {quote_char!r} to complete the string"
         })

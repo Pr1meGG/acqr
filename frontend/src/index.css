@@ -47,6 +47,22 @@
     text-decoration: underline wavy #ef4444;
     text-underline-offset: 3px;
   }
+  .acqr-error-glyph {
+    background: #ef4444;
+    border-radius: 50%;
+    width: 8px !important;
+    height: 8px !important;
+    margin-left: 8px;
+    margin-top: 6px;
+  }
+  .acqr-warning-glyph {
+    background: #f59e0b;
+    border-radius: 50%;
+    width: 8px !important;
+    height: 8px !important;
+    margin-left: 8px;
+    margin-top: 6px;
+  }
 
   .issue-card-enter {
     animation: slideIn 0.25s ease-out;

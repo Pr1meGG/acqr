@@ -35,11 +35,12 @@ export default function IssueCard({ err, onApplyFix, onLineClick, isActive }) {
   const errorMsg   = compressText(err.error);
   const shortExp   = err.short_explanation || compressText(err.explanation);
   const suggestion = err.suggestion && !isGeneric(err.suggestion) ? compressText(err.suggestion) : null;
-  const hasFix     = err.fix?.changes?.length > 0;
+  // A fix is usable if it's a replace_line or has a non-empty changes array
+  const hasFix = err.fix?.type === "replace_line" || err.fix?.changes?.length > 0;
 
   const handleApply = (e) => {
     e.stopPropagation();
-    onApplyFix(err.fix.changes);
+    onApplyFix(err.fix);   // pass full fix object; App.applyFix normalises format
     setJustFixed(true);
     setTimeout(() => setJustFixed(false), 2500);
   };
@@ -60,61 +61,48 @@ export default function IssueCard({ err, onApplyFix, onLineClick, isActive }) {
     <div
       onClick={onLineClick}
       className={[
-        "glass p-4 rounded-xl border-l-4 transition-all duration-200 cursor-pointer overflow-hidden animate-slide-in hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] hover:bg-[#0d1b2e]",
+        "glass p-4 rounded-xl border-l-4 transition-all duration-200 cursor-pointer overflow-hidden animate-slide-in-right hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] hover:bg-[#0d1b2e]",
         sev.border,
         isActive ? "ring-2 ring-primary/50" : "hover:bg-white/5",
         justFixed ? "ring-2 ring-success/50" : ""
       ].join(" ")}
     >
       {/* ── Header: Icon, Line, Error ────────────────────────────────────── */}
-      <div className="flex items-start gap-3">
-        <span className="text-xl leading-none mt-0.5">{sev.icon}</span>
-        <div className="flex-1">
-          {err.line && (
-            <span className={`text-sm font-semibold font-mono mb-1 block ${sev.lineColor}`}>
-              Line {err.line}
-            </span>
-          )}
-          <p className="text-base font-medium text-text leading-snug">
-            {errorMsg}
-          </p>
-          {justFixed && (
-            <p className="mt-2 text-sm text-success font-medium">✓ Fix applied successfully</p>
-          )}
+      <div className="flex flex-col gap-1.5 mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xl leading-none mt-0.5">{sev.icon}</span>
+          <span className={`text-[15px] font-semibold text-slate-100`}>
+            Line {err.line ?? "?"} — <span className="font-medium text-slate-300">{errorMsg}</span>
+          </span>
         </div>
+        {justFixed && (
+          <p className="mt-1 text-sm text-success font-medium">✓ Fix applied successfully</p>
+        )}
       </div>
 
       {/* ── Body: What went wrong & Fix ──────────────────────────────────── */}
-      <div className="mt-4 flex flex-col gap-4">
+      <div className="flex flex-col gap-3 mt-4">
         {shortExp && (
           <div>
-            <p className="text-sm font-bold text-text-muted mb-1">
-              👉 What went wrong:
-            </p>
-            <p className="text-sm text-slate-300 leading-relaxed">
-              {shortExp}
-            </p>
+            <p className="text-xs font-bold text-text-muted mb-0.5">What went wrong:</p>
+            <p className="text-sm text-slate-300 leading-relaxed">{shortExp}</p>
           </div>
         )}
 
         {suggestion && (
           <div>
-            <p className="text-sm font-bold text-text-muted mb-1">
-              💡 Fix:
-            </p>
-            <p className="text-sm text-slate-300 leading-relaxed italic">
-              {suggestion}
-            </p>
+            <p className="text-xs font-bold text-text-muted mb-0.5">Fix:</p>
+            <p className="text-sm text-slate-300 leading-relaxed italic">{suggestion}</p>
           </div>
         )}
 
         {hasFix && !justFixed && (
-          <div className="mt-4 pt-4 border-t border-slate-700/50">
+          <div className="mt-3">
             <button
               onClick={handleApply}
-              className="btn-primary w-full justify-center transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_0_10px_rgba(59,130,246,0.3)]"
+              className="btn-primary w-full justify-center transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] py-2 text-[13px] font-bold"
             >
-              Fix automatically
+              Apply Fix
             </button>
           </div>
         )}
