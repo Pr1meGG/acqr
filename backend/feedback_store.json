@@ -1,0 +1,18 @@
+{
+    "syntax:missing colon (:) after the 'if' condition.": {
+        "total": 1,
+        "correct": 1
+    },
+    "syntax:parsing failed: 'expected ':' (tmptszr5ncp, line 4)'": {
+        "total": 1,
+        "correct": 1
+    },
+    "syntax:missing colon at the end of the 'if' statement header.": {
+        "total": 1,
+        "correct": 1
+    },
+    "syntax:parsing failed: 'invalid syntax (tmpogpt2r9g, line 3)'": {
+        "total": 1,
+        "correct": 0
+    }
+}
