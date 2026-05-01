@@ -41,7 +41,7 @@ export default function App() {
   const [loading,     setLoading]     = useState(false);
   const [reqError,    setReqError]    = useState("");
   const [activeIdx,   setActiveIdx]   = useState(-1);
-  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [consoleOpen, setConsoleOpen] = useState(false); // hidden by default
 
   const editorRef    = useRef(null);
   const monacoRef    = useRef(null);
@@ -62,7 +62,6 @@ export default function App() {
     setReqError("");
     setLoading(true);
     setExecution(null);
-    setConsoleOpen(true);
     try {
       const [aRes, rRes] = await Promise.all([
         fetch(`${API_BASE_URL}/analyze`,  { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }) }),
@@ -214,14 +213,28 @@ export default function App() {
       
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="flex items-center justify-between px-6 py-3 border-b border-border bg-surface flex-shrink-0">
-        <div className="text-lg font-bold tracking-tight">ACQR <span className="text-sm font-normal text-text-muted ml-2">AI Code Reviewer</span></div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <span className="w-2.5 h-2.5 rounded-full bg-blue-500" style={{ boxShadow: "0 0 8px rgba(59,130,246,0.7)" }} />
+          <span className="font-bold tracking-tight text-[15px]">ACQR</span>
+          <span className="text-text-muted text-[13px]">&bull; AI Code Reviewer</span>
+        </div>
+        <div className="flex items-center gap-3">
           <button
             onClick={runAnalysis}
             disabled={loading}
-            className="btn-primary"
+            className="btn-primary px-5 py-2 text-sm transition-all duration-200
+                       hover:scale-105 hover:shadow-[0_0_14px_rgba(59,130,246,0.4)]
+                       disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            {loading ? "Analyzing..." : "Analyze Code"}
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                Analyzing…
+              </span>
+            ) : "Analyze Code"}
           </button>
         </div>
       </header>
@@ -229,8 +242,8 @@ export default function App() {
       {/* ── Top Area: Editor & Analysis (75% height) ──────────────────────── */}
       <div className="flex flex-row flex-1 overflow-hidden">
         
-        {/* LEFT PANEL (Editor) */}
-        <div className="w-1/2 flex flex-col p-4 bg-base border-r border-border">
+        {/* LEFT PANEL (Editor) — 60% */}
+        <div className="w-[60%] flex flex-col p-4 bg-base border-r border-border">
           <div className={`flex-1 rounded-xl overflow-hidden border bg-surface transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500/40 focus-within:border-blue-500/50 ${issueCount > 0 ? "border-red-500/50 ring-2 ring-red-500/30" : "border-slate-700"}`}>
             <Editor
               height="100%"
@@ -250,28 +263,18 @@ export default function App() {
               }}
             />
           </div>
-          <div className="mt-4 flex items-center justify-between px-2">
-            <span className="text-xs text-text-muted italic animate-pulse-soft">
-              Press Analyze or keep typing...
-            </span>
-            <button 
-              className="btn-primary px-8 py-3 text-sm transition-all duration-200 hover:scale-105 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)]" 
-              onClick={runAnalysis} 
-              disabled={loading}
-            >
-              {loading ? "Analyzing..." : "Analyze Code"}
-            </button>
-          </div>
+          {/* Keyboard hint only */}
+          <p className="mt-2.5 px-1 text-xs text-text-muted italic">Press Ctrl+Enter to analyze…</p>
         </div>
 
-        {/* RIGHT PANEL (Analysis) */}
-        <div className="w-1/2 flex flex-col p-4 bg-surface-2 overflow-y-auto">
+        {/* RIGHT PANEL (Analysis) — 40% */}
+        <div className="w-[40%] flex flex-col py-4 px-3 bg-surface-2 overflow-y-auto">
           {/* Empty state */}
           {!result && !loading && (
             <div className="flex flex-col items-center justify-center h-full text-center text-text-muted gap-2 animate-fade-in">
               <span className="text-5xl text-slate-600 mb-2">🔍</span>
               <p className="font-semibold text-slate-300 text-lg">No analysis yet</p>
-              <p className="text-sm">Click analyze to review your code.</p>
+              <p className="text-sm">Click Analyze to review your code.</p>
             </div>
           )}
 
@@ -284,19 +287,19 @@ export default function App() {
             </div>
           )}
 
-          {/* Loading state */}
+          {/* Loading skeletons */}
           {loading && (
-            <div className="flex flex-col gap-4 animate-pulse">
+            <div className="flex flex-col gap-5 animate-pulse">
               {[1, 2, 3].map(n => (
-                <div key={n} className="h-24 rounded-xl bg-surface border border-border"></div>
+                <div key={n} className="h-28 rounded-xl bg-surface border border-border" />
               ))}
             </div>
           )}
 
           {/* Issues List */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-5">
             {flat.map((group, gi) => (
-              <div key={gi} className="flex flex-col gap-4">
+              <div key={gi} className="flex flex-col gap-5">
                 {group.issues.map((err, ei) => (
                   <IssueCard
                     key={ei}
@@ -316,13 +319,45 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── BOTTOM PANEL (Console) ────────────────────────────────────────── */}
-      <div className="h-[25%] w-full border-t border-border bg-base overflow-y-auto p-4 flex flex-col font-mono text-sm">
-        <h3 className="text-xs font-bold text-text-muted uppercase mb-2">Console Output</h3>
+      {/* ── Floating Console (bottom-right) ─────────────────────────────── */}
+      {/* Slide-up panel */}
+      <div
+        className="fixed bottom-0 right-0 w-[480px] bg-[#080e1a] border border-border/60 rounded-tl-2xl
+                   shadow-[0_-8px_32px_rgba(0,0,0,0.5)] flex flex-col
+                   transition-all duration-300 ease-in-out overflow-hidden z-50"
+        style={{ height: consoleOpen ? 220 : 0 }}
+      >
+        <div className="px-4 py-2.5 flex items-center gap-2 border-b border-border/50 flex-shrink-0">
+          <span className="w-2 h-2 rounded-full bg-green-500" style={{ boxShadow: "0 0 6px rgba(16,185,129,0.7)" }} />
+          <span className="text-[11px] font-mono font-semibold text-text-muted uppercase tracking-widest">Console</span>
+          {execution && (
+            <span className={`ml-auto text-[11px] font-mono font-bold ${execution.error ? "text-red-400" : "text-green-400"}`}>
+              {execution.error ? "● ERR" : "● OK"}
+            </span>
+          )}
+          <button
+            onClick={() => setConsoleOpen(false)}
+            className="ml-2 text-text-muted hover:text-slate-200 text-[13px] transition-colors"
+          >✕</button>
+        </div>
         <div className="flex-1 overflow-y-auto">
           <AnimatedTerminal execution={execution} />
         </div>
       </div>
+
+      {/* FAB toggle */}
+      <button
+        onClick={() => setConsoleOpen(v => !v)}
+        className="fixed bottom-5 right-5 z-50 flex items-center gap-2 font-mono text-[12px]
+                   bg-[#0d1b2e] hover:bg-[#0f2040] border border-border hover:border-border-2
+                   text-text-muted hover:text-slate-200 rounded-full px-4 py-2
+                   shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-all duration-200
+                   hover:shadow-[0_4px_24px_rgba(59,130,246,0.2)]"
+      >
+        <span className={`w-1.5 h-1.5 rounded-full ${execution ? (execution.error ? "bg-red-400" : "bg-green-400") : "bg-slate-600"}`} />
+        {consoleOpen ? "Hide Output" : "Show Output"}
+      </button>
     </div>
+
   );
 }
