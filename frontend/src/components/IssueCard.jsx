@@ -1,11 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 const SEVERITY = {
-  error:   { border: "border-l-red-500",    icon: "❌", badge: "bg-red-500/10 text-red-400" },
-  warning: { border: "border-l-yellow-400", icon: "⚠️", badge: "bg-yellow-500/10 text-yellow-400" },
-  info:    { border: "border-l-blue-400",   icon: "ℹ️",  badge: "bg-blue-500/10 text-blue-400" },
+  error:   {
+    border:  "border-l-[#ff3b30]",
+    glow:    "rgba(255,59,48,0.25)",
+    labels:  ["BROKE THE FLOW", "HOLD UP", "SYNTAX HICCUP", "QUICK FIX NEEDED", "NEEDS A LOOK"],
+    headlineColor: "text-[#ff453a]",
+  },
+  warning: {
+    border:  "border-l-[#ff9f0a]",
+    glow:    "rgba(255,159,10,0.2)",
+    labels:  ["NEEDS ATTENTION", "HEADS UP", "MIGHT BE BUGGY", "SLIGHT ISSUE"],
+    headlineColor: "text-[#ff9f0a]",
+  },
+  info:    {
+    border:  "border-l-[#0a84ff]",
+    glow:    "rgba(10,132,255,0.2)",
+    labels:  ["PRO TIP", "SUGGESTION", "GOOD TO KNOW", "IDEA"],
+    headlineColor: "text-[#5e5ce6]",
+  },
 };
 
 function compress(msg) {
@@ -24,103 +39,147 @@ function isGeneric(t) {
   return l.includes("flake8") || l.includes("use ide") || l.includes("pylint") || l.includes("use a linter");
 }
 
-export default function IssueCard({ err, onApplyFix, onLineClick, isActive }) {
+export default function IssueCard({ err, onApplyFix, onRemoveIssue, onLineClick, onHover, isActive }) {
   const [learnOpen, setLearnOpen] = useState(false);
   const [justFixed, setJustFixed] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
-  const sev        = SEVERITY[err.severity || "error"] || SEVERITY.error;
-  const errorMsg   = compress(err.error);
+  const sev         = SEVERITY[err.severity || "error"] || SEVERITY.error;
+  const errorMsg    = compress(err.error);
   const explanation = err.short_explanation || compress(err.explanation);
-  const suggestion = err.suggestion && !isGeneric(err.suggestion) ? compress(err.suggestion) : null;
-  const fullExp    = err.explanation && err.explanation !== err.short_explanation ? err.explanation : null;
-  const hasFix     = err.fix?.type === "replace_line" || err.fix?.changes?.length > 0;
+  const suggestion  = err.suggestion && !isGeneric(err.suggestion) ? compress(err.suggestion) : null;
+  const fullExp     = err.explanation && err.explanation !== err.short_explanation ? err.explanation : null;
+  const hasFix      = err.fix?.type === "replace_line" || err.fix?.changes?.length > 0;
 
   const handleApply = (e) => {
     e.stopPropagation();
-    onApplyFix(err.fix);
-    setJustFixed(true);
-    setTimeout(() => setJustFixed(false), 2500);
+    setJustFixed(true); // Triggers button glow and sorted state
+    
+    // Step 1: Wait a short moment to show the success state on the button
+    setTimeout(() => {
+      // Step 2: Trigger code update and console logs in App
+      onApplyFix(err.fix, err.flatIndex, err.error);
+    }, 400);
+
+    // Step 3: Start fading the card out
+    setTimeout(() => {
+      setIsLeaving(true);
+    }, 1200);
   };
+
+  // Step 4: Actually remove the issue from the list after animation finishes
+  useEffect(() => {
+    if (isLeaving && onRemoveIssue) {
+      const t = setTimeout(() => onRemoveIssue(err.flatIndex), 300);
+      return () => clearTimeout(t);
+    }
+  }, [isLeaving, err.flatIndex, onRemoveIssue]);
+
+  const lineStr = err.line ? `LINE ${err.line}` : "ISSUE";
+  // Pick a stable label based on error string length so it doesn't flicker on re-renders
+  const labelList = sev.labels || ["ISSUE"];
+  const stableIndex = (errorMsg.length + (err.line || 0)) % labelList.length;
+  const displayLabel = labelList[stableIndex];
 
   return (
     <div
       onClick={onLineClick}
+      onMouseEnter={() => onHover && onHover(err.flatIndex)}
+      onMouseLeave={() => onHover && onHover(-1)}
       className={[
-        "rounded-xl border-l-4 bg-[#0b1626] transition-all duration-200 cursor-pointer overflow-hidden",
-        "animate-slide-in-right hover:-translate-y-0.5",
-        "hover:bg-[#0d1e35] hover:shadow-[0_4px_24px_rgba(0,0,0,0.35)]",
+        "relative rounded-2xl border-l-[4px] cursor-pointer overflow-hidden",
+        "transition-all duration-300",
+        isLeaving ? "animate-slide-out-right opacity-0" : "animate-slide-in-right",
         sev.border,
-        isActive  ? "ring-2 ring-primary/40 bg-[#0d1e35]" : "",
-        justFixed ? "ring-2 ring-success/40" : "",
+        isActive
+          ? "scale-[1.01] shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.6)] z-10"
+          : "shadow-card hover:shadow-card-hover",
+        justFixed ? "shadow-[0_0_0_1px_rgba(16,185,129,0.4)]" : "",
       ].join(" ")}
+      style={{
+        background: `linear-gradient(145deg, rgba(16,20,30,0.95) 0%, rgba(10,14,24,0.98) 100%)`,
+        backdropFilter: "blur(20px)",
+      }}
     >
-      {/* ── Title row ──────────────────────────────────────────────────── */}
-      <div className="flex items-start gap-3 px-4 pt-4 pb-3">
-        <span className="text-base leading-none mt-0.5 flex-shrink-0">{sev.icon}</span>
-        <div className="flex-1 min-w-0">
-          <p className="text-[14px] font-semibold text-slate-100 leading-snug">
-            Line {err.line ?? "?"}&ensp;—&ensp;
-            <span className="font-normal text-slate-300">{errorMsg}</span>
-          </p>
+      {/* Ambient glow behind card contents */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-40"
+        style={{
+          background: `radial-gradient(circle at 0% 0%, ${sev.glow}, transparent 70%)`
+        }}
+      />
 
-          {/* 1-line explanation */}
-          {explanation && (
-            <p className="mt-1.5 text-[13px] text-slate-400 leading-relaxed">
-              {explanation}
-            </p>
-          )}
-        </div>
+      {/* ── Headline row ──────────────────────────────────────────────────── */}
+      <div className="relative px-5 pt-5 pb-3">
+        <h3 className={`font-black text-lg tracking-wide uppercase mb-2 ${sev.headlineColor}`}
+            style={{ textShadow: `0 0 16px ${sev.glow}` }}>
+          {lineStr} {displayLabel}
+        </h3>
+        <p className="text-[15px] font-medium text-slate-200 leading-snug">
+          {errorMsg}
+        </p>
+
+        {/* 1-line explanation */}
+        {explanation && (
+          <p className="text-[13px] text-slate-400 mt-1.5 leading-relaxed">
+            {explanation}
+          </p>
+        )}
       </div>
 
-      {/* ── Action row ─────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-4 pb-4">
+      {/* ── Actions ────────────────────────────────────────────────────── */}
+      <div className="relative flex items-center gap-3 px-5 pb-5 mt-2">
         {hasFix && !justFixed && (
           <button
             onClick={handleApply}
-            className="flex-1 btn-primary py-2 text-[13px] font-semibold justify-center
-                       hover:scale-[1.02] hover:shadow-[0_0_14px_rgba(59,130,246,0.45)]
-                       transition-all duration-200"
+            className="flex-1 py-2.5 rounded-xl font-bold text-[13px] text-white
+                       transition-all duration-300 transform hover:scale-[1.03]
+                       flex items-center justify-center gap-2"
+            style={{
+              background: "linear-gradient(135deg, #007aff 0%, #5e5ce6 100%)",
+              boxShadow: "0 4px 14px rgba(94,92,230,0.4), inset 0 1px 0 rgba(255,255,255,0.2)",
+            }}
           >
-            Fix automatically
+            Fix this for me ⚡
           </button>
         )}
-
         {justFixed && (
-          <span className="text-sm text-success font-medium animate-fade-in">
-            ✓ Fixed!
-          </span>
+          <div className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl
+                          bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[13px]">
+            <span className="text-lg">✨</span> Sorted!
+          </div>
         )}
 
-        {/* Learn why — collapsible */}
         {(suggestion || fullExp) && (
           <button
             onClick={e => { e.stopPropagation(); setLearnOpen(v => !v); }}
-            className="text-[12px] text-text-muted hover:text-slate-300 transition-colors px-2 py-1.5
-                       border border-border rounded-lg hover:border-border-2 flex-shrink-0"
+            className="flex-shrink-0 px-4 py-2.5 rounded-xl text-[12px] font-semibold text-slate-400
+                       hover:text-white bg-white/5 hover:bg-white/10 transition-all duration-200"
           >
-            {learnOpen ? "Hide ▲" : "Learn why ▼"}
+            {learnOpen ? "Close" : "Why? 🤔"}
           </button>
         )}
       </div>
 
-      {/* ── Collapsible detail ─────────────────────────────────────────── */}
+      {/* ── Collapsible "Why?" ─────────────────────────────────────────── */}
       {learnOpen && (
         <div
-          className="px-4 pb-4 border-t border-[#1a2840] pt-3 flex flex-col gap-3 animate-fade-in"
+          className="relative border-t border-white/5 px-5 pt-4 pb-5 flex flex-col gap-4 animate-fade-in"
           onClick={e => e.stopPropagation()}
+          style={{ background: "rgba(0,0,0,0.2)" }}
         >
           {suggestion && (
             <div>
-              <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">
-                Suggested fix
+              <p className="text-[10px] font-bold text-[#5e5ce6] uppercase tracking-widest mb-1.5">
+                The Fix
               </p>
-              <p className="text-[13px] text-slate-300 leading-relaxed italic">{suggestion}</p>
+              <p className="text-[13px] text-slate-300 leading-relaxed font-medium">{suggestion}</p>
             </div>
           )}
           {fullExp && (
             <div>
-              <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">
-                Explanation
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                The Details
               </p>
               <p className="text-[13px] text-slate-400 leading-relaxed">{fullExp}</p>
             </div>

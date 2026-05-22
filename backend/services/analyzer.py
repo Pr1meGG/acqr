@@ -205,7 +205,16 @@ def repair_unterminated_string(line: str) -> tuple:
 def validate_and_repair_fix(code: str, fix: dict) -> tuple:
     if not fix or "changes" not in fix:
         return None, None
-        
+
+    # If the original file already has syntax errors we cannot use a whole-file
+    # ast.parse to validate a single-line fix — it would always fail.
+    # In that case we skip the strict gate and trust the per-line repair logic.
+    original_already_broken = False
+    try:
+        ast.parse(code)
+    except SyntaxError:
+        original_already_broken = True
+
     lines = code.splitlines()
     modified_lines = lines[:]
     repaired_suggestion = None
@@ -240,17 +249,29 @@ def validate_and_repair_fix(code: str, fix: dict) -> tuple:
             modified_lines[line_start-1 : line_end] = replacement.splitlines()
             
     simulated_code = "\n".join(modified_lines)
-    try:
-        ast.parse(simulated_code)
-    except SyntaxError:
-        return None, None
 
-    # If any repair was made, upgrade the fix to replace_line format
+    if not original_already_broken:
+        # Strict mode: original was clean → fix must also produce clean code.
+        try:
+            ast.parse(simulated_code)
+        except SyntaxError:
+            return None, None
+    else:
+        # Relaxed mode: original already had errors.
+        # Discard the fix only if the replacement line itself is still broken
+        # when parsed in isolation (avoids offering a fix that makes things worse).
+        if len(changes) == 1:
+            isolated = changes[0].get("replacement", "").strip()
+            try:
+                ast.parse(isolated)
+            except SyntaxError:
+                return None, None
+
+    # If any repair was made, upgrade to the richer replace_line format.
     if repaired_suggestion and len(changes) == 1:
         c = changes[0]
-        upgraded = make_structured_fix(c["line_start"], c["replacement"])
-        return upgraded, repaired_suggestion
-        
+        return make_structured_fix(c["line_start"], c["replacement"]), repaired_suggestion
+
     return fix, repaired_suggestion
 
 
@@ -469,92 +490,303 @@ def detect_logical_and_lint_issues(code: str) -> List[Dict]:
 
 
 # ---------------------------------------------------------------------------
-# Main Analysis Entry Point
+# LAYER 1 — Syntax detection (ast.parse)
+# ---------------------------------------------------------------------------
+_SYNTAX_FIX_KEYWORDS = frozenset(["if", "elif", "else", "for", "while", "def", "class", "with", "try", "except", "finally"])
+
+def _syntax_fix(line_num: int, msg: str, line_content: str) -> Dict | None:
+    """Return a structured fix for the most common syntax errors, or None."""
+    trimmed = line_content.strip()
+
+    # Missing colon
+    if "expected ':'" in msg or "was expecting ':'" in msg:
+        first_tok = trimmed.split()[0] if trimmed else ""
+        if first_tok in _SYNTAX_FIX_KEYWORDS and not trimmed.endswith(":"):
+            return make_structured_fix(line_num, line_content.rstrip() + ":")
+
+    # Unterminated / mismatched quotes
+    if "unterminated string" in msg.lower() or "EOL while scanning" in msg:
+        repaired, _ = repair_unterminated_string(line_content)
+        if repaired:
+            return make_structured_fix(line_num, repaired)
+
+    # Unclosed parenthesis / bracket
+    if "was never closed" in msg or "unexpected EOF" in msg or "unmatched" in msg:
+        for open_ch, close_ch in [("(", ")"), ("[", "]"), ("{", "}")]:
+            diff = line_content.count(open_ch) - line_content.count(close_ch)
+            if diff > 0:
+                return make_structured_fix(line_num, line_content.rstrip() + close_ch * diff)
+
+    return None
+
+
+def detect_syntax_errors(code: str) -> List[Dict]:
+    """
+    LAYER 1 — Run ast.parse.  Returns a list with exactly one issue on the
+    first SyntaxError found, or an empty list if the code is syntactically
+    valid.  This is the *authoritative* syntax gate; it never silently fails.
+    """
+    try:
+        ast.parse(code)
+        return []
+    except SyntaxError as e:
+        line_num = e.lineno or 1
+        msg      = e.msg or str(e)
+        lines    = code.splitlines()
+        line_content = lines[line_num - 1] if 0 < line_num <= len(lines) else ""
+
+        fix = _syntax_fix(line_num, msg, line_content)
+
+        explanation = f"Python cannot parse this line: {msg}"
+        suggestion  = None
+        if "expected ':'" in msg:
+            suggestion = "Add ':' at the end of the statement to open the block."
+        elif "unterminated string" in msg.lower():
+            suggestion = "Close the string with a matching quote character."
+        elif "was never closed" in msg or "unmatched" in msg:
+            suggestion = "Balance the opening bracket/parenthesis with a matching closing one."
+        elif "invalid syntax" in msg:
+            suggestion = "Review the line for typos or missing characters."
+
+        return [{
+            "line"       : line_num,
+            "type"       : "syntax",
+            "message"    : msg,
+            "root_cause" : "SyntaxError raised by Python AST parser",
+            "severity"   : "high",
+            "confidence" : 1.0,
+            "source"     : ["ast"],
+            "fix"        : fix,
+            "explanation": explanation,
+            "suggestion" : suggestion,
+        }]
+
+
+# ---------------------------------------------------------------------------
+# LAYER 2 — Structural heuristics (regex, works without a valid AST)
+# ---------------------------------------------------------------------------
+_BLOCK_KW_RE  = re.compile(r'^(if|elif|else|for|while|def|class|with|try|except|finally)\b')
+_CONTROL_RE   = re.compile(r'^(if|elif|for|while|with)\b')
+_INVALID_OP   = re.compile(r'===|!==')
+_WALRUS_LIKE  = re.compile(r'===')
+
+def detect_structural_issues(code: str) -> List[Dict]:
+    """
+    LAYER 2 — Line-by-line scanner for structural problems that:
+     - Can be detected without a valid AST
+     - May produce multiple hits across the file (unlike ast.parse which stops at 1)
+    Covers: missing colons, unclosed brackets, invalid operators.
+    """
+    issues: List[Dict] = []
+    lines = code.splitlines()
+
+    # Running paren / bracket / brace depth tracker
+    paren_depth = brace_depth = bracket_depth = 0
+    open_char_line: dict[str, int] = {}
+
+    for i, line in enumerate(lines):
+        line_num = i + 1
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+
+        # ── 1. Missing colon ──────────────────────────────────────────────────
+        # A keyword line that ends without `:` (after ignoring trailing comments)
+        no_comment = re.sub(r'#.*$', '', stripped).rstrip()
+        if _BLOCK_KW_RE.match(no_comment) and not no_comment.endswith(":") and not no_comment.endswith(",") and not no_comment.endswith("\\"):
+            # Make sure it's not a multi-line expression split across lines
+            if _CONTROL_RE.match(no_comment) or no_comment.rstrip().endswith(")") or not no_comment.endswith("("):
+                fix_line = line.rstrip() + ":"
+                issues.append({
+                    "line"       : line_num,
+                    "type"       : "syntax",
+                    "message"    : f"Missing ':' after '{stripped.split()[0]}' statement",
+                    "root_cause" : "Block header missing colon",
+                    "severity"   : "high",
+                    "confidence" : 0.92,
+                    "source"     : ["heuristic"],
+                    "fix"        : make_structured_fix(line_num, fix_line),
+                    "explanation": f"The '{stripped.split()[0]}' statement needs a ':' to open its body.",
+                    "suggestion" : f"Add ':' at the end of line {line_num}.",
+                })
+
+        # ── 2. Invalid JS-style operators ─────────────────────────────────────
+        if _INVALID_OP.search(no_comment):
+            op  = "===" if "===" in no_comment else "!=="
+            fix = no_comment.replace("===", "==").replace("!==", "!=")
+            issues.append({
+                "line"       : line_num,
+                "type"       : "syntax",
+                "message"    : f"Invalid operator '{op}' (JavaScript syntax)",
+                "root_cause" : "JavaScript comparison operator used in Python",
+                "severity"   : "high",
+                "confidence" : 0.98,
+                "source"     : ["heuristic"],
+                "fix"        : make_structured_fix(line_num, line.replace("===", "==").replace("!==", "!=")),
+                "explanation": f"'{op}' is a JavaScript operator. Python uses '{'==' if op == '===' else '!='}' instead.",
+                "suggestion" : f"Replace '{op}' with '{'==' if op == '===' else '!='}'.",
+            })
+
+        # ── 3. Unclosed brackets/parens tracked across lines ──────────────────
+        for ch in line:
+            if   ch == '(': paren_depth   += 1; open_char_line.setdefault('(', line_num)
+            elif ch == ')': paren_depth   -= 1; open_char_line.pop('(', None)
+            elif ch == '[': bracket_depth += 1; open_char_line.setdefault('[', line_num)
+            elif ch == ']': bracket_depth -= 1; open_char_line.pop('[', None)
+            elif ch == '{': brace_depth   += 1; open_char_line.setdefault('{', line_num)
+            elif ch == '}': brace_depth   -= 1; open_char_line.pop('{', None)
+
+    # After all lines: flag still-open brackets
+    pair = {'(': ')', '[': ']', '{': '}'}
+    for open_ch, depth in [('(', paren_depth), ('[', bracket_depth), ('{', brace_depth)]:
+        if depth > 0:
+            orig_line = open_char_line.get(open_ch, 1)
+            line_content = lines[orig_line - 1]
+            diff = line_content.count(open_ch) - line_content.count(pair[open_ch])
+            fixed = line_content.rstrip() + pair[open_ch] * max(diff, 1)
+            issues.append({
+                "line"       : orig_line,
+                "type"       : "syntax",
+                "message"    : f"Unclosed '{open_ch}' (never matched by '{pair[open_ch]}')",
+                "root_cause" : f"Opening '{open_ch}' has no matching closing '{pair[open_ch]}'",
+                "severity"   : "high",
+                "confidence" : 0.90,
+                "source"     : ["heuristic"],
+                "fix"        : make_structured_fix(orig_line, fixed),
+                "explanation": f"The '{open_ch}' opened on line {orig_line} is never closed.",
+                "suggestion" : f"Add a closing '{pair[open_ch]}' to match the opening bracket.",
+            })
+
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Main Analysis Entry Point — 3-layer pipeline
 # ---------------------------------------------------------------------------
 ALLOWED_MESSAGE_IDS = {"E0001", "E0401", "E0601", "E0602"}
 
 def analyze_code(code: str) -> Dict[str, List[Dict[str, Any]]]:
-    print("\n[DEBUG] --- STARTING ANALYZE_CODE ---")
-    
-    # 1. Run Pylint (Static)
-    pylint_output = run_pylint(code)
-    try:
-        parsed = json.loads(pylint_output)
-    except:
-        try:
-            ast.parse(code)
-            parsed = []
-        except SyntaxError as e:
-            parsed = [{"line": e.lineno, "message": str(e), "message-id": "E0001", "symbol": "syntax-error"}]
+    print("\n[DEBUG] --- STARTING ANALYZE_CODE (3-layer pipeline) ---")
 
-    static_issues = []
-    for err in parsed:
-        if err.get("message-id") not in ALLOWED_MESSAGE_IDS and err.get("message-id") != "E0001":
-            continue
-            
-        is_syntax = "syntax" in err.get("symbol", "").lower()
-        static_issues.append({
-            "line": err.get("line"),
-            "type": "syntax" if is_syntax else "lint",
-            "message": err.get("message", ""),
-            "root_cause": None,
-            "severity": "high" if "error" in err.get("symbol", "").lower() else "medium",
-            "confidence": 1.0,
-            "source": ["static"],
-            "raw_err": err  # Passed to fallback
-        })
+    # ═══════════════════════════════════════════════════════════════════════════
+    # LAYER 1 — Syntax gate (ast.parse)
+    # ═══════════════════════════════════════════════════════════════════════════
+    syntax_issues = detect_syntax_errors(code)
 
-    print("\n[DEBUG] STATIC ISSUES:")
-    print(static_issues)
+    # Also run the regex-based structural scanner — it can find:
+    #   • missing colons on control-flow lines
+    #   • unclosed brackets
+    #   • JS-style operators
+    # regardless of whether ast.parse already failed.
+    structural_issues = detect_structural_issues(code)
 
-    # 2. Run Heuristics
+    print("\n[DEBUG] SYNTAX (ast) ISSUES:", syntax_issues)
+    print("[DEBUG] STRUCTURAL ISSUES  :", structural_issues)
+
+    # Merge structural into syntax list, deduped by (line, type)
+    seen_keys: set[tuple] = {(s["line"], s["type"]) for s in syntax_issues}
+    for s in structural_issues:
+        key = (s["line"], s["type"])
+        if key not in seen_keys:
+            syntax_issues.append(s)
+            seen_keys.add(key)
+
+    # If ANY syntax issue was found, skip pylint + heuristics + AI and return
+    # immediately. A broken file can't be meaningfully linted.
+    if syntax_issues:
+        print("[DEBUG] Syntax errors found — returning Layer 1 results immediately.")
+        final = []
+        for issue in syntax_issues:
+            raw_msg   = issue.get("message", "")
+            issue_key = f"{issue.get('type')}:{normalize(raw_msg)}"
+            short_exp = make_short_explanation(
+                issue.get("explanation", ""), issue.get("type", ""), raw_msg
+            )
+            fix = issue.get("fix")
+            if fix:
+                validated, repaired_sugg = validate_and_repair_fix(code, fix)
+                fix = validated
+                if repaired_sugg:
+                    issue["suggestion"] = repaired_sugg
+            final.append({
+                "issue_key"        : issue_key,
+                "line"             : issue.get("line"),
+                "error"            : raw_msg,
+                "short_explanation": short_exp,
+                "explanation"      : issue.get("explanation", ""),
+                "fix"              : fix,
+                "suggestion"       : filter_suggestion(issue.get("suggestion") or ""),
+                "source"           : issue.get("source"),
+                "type"             : issue.get("type"),
+                "root_cause"       : issue.get("root_cause"),
+                "severity"         : issue.get("severity"),
+                "confidence"       : issue.get("confidence"),
+            })
+        return {"errors": final}
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # LAYER 2 — Heuristics (AST is valid, dig deeper)
+    # ═══════════════════════════════════════════════════════════════════════════
     heuristic_issues = (
         detect_unterminated_strings(code)
         + detect_runtime_risks(code)
         + detect_logical_and_lint_issues(code)
     )
-    print("\n[DEBUG] HEURISTIC ISSUES:")
-    print(heuristic_issues)
-
-    # 3. Run Intent Engine
     intent_issues = detect_intent_mismatch(code)
-    print("\n[DEBUG] INTENT ISSUES:")
-    print(intent_issues)
+    print("\n[DEBUG] HEURISTIC ISSUES:", heuristic_issues)
+    print("[DEBUG] INTENT ISSUES    :", intent_issues)
 
-    # 4. Run AI Analysis
-    ai_insight = generate_llm_insights(code, static_issues=static_issues)
-    
-    print("\n[DEBUG] AI RAW RESPONSE:")
-    print(ai_insight)
-    
-    ai_issues = []
+    # ═══════════════════════════════════════════════════════════════════════════
+    # LAYER 3 — Pylint (lint only — runs AFTER syntax passes)
+    # ═══════════════════════════════════════════════════════════════════════════
+    pylint_output = run_pylint(code)
+    static_issues: List[Dict] = []
+    try:
+        parsed = json.loads(pylint_output)
+    except Exception:
+        parsed = []
+
+    for err in parsed:
+        if err.get("message-id") not in ALLOWED_MESSAGE_IDS:
+            continue
+        sym = err.get("symbol", "").lower()
+        static_issues.append({
+            "line"     : err.get("line"),
+            "type"     : "syntax" if "syntax" in sym else "lint",
+            "message"  : err.get("message", ""),
+            "root_cause": None,
+            "severity" : "high" if "error" in sym else "medium",
+            "confidence": 1.0,
+            "source"   : ["static"],
+            "raw_err"  : err,
+        })
+
+    print("\n[DEBUG] PYLINT ISSUES:", static_issues)
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # AI Enhancement (optional, non-blocking)
+    # ═══════════════════════════════════════════════════════════════════════════
+    ai_insight  = generate_llm_insights(code, static_issues=static_issues)
+    ai_issues: List[Dict] = []
     if ai_insight:
-        global_fix = ai_insight.get("fix")
-        global_explanation = ai_insight.get("explanation")
-        global_suggestion = ai_insight.get("suggestion")
-        
-        for issue in ai_insight.get("issues", []) if isinstance(ai_insight.get("issues"), list) else []:
-            ai_issues.append({
-                "line": issue.get("line"),
-                "type": issue.get("type", "logical"),
-                "message": issue.get("message", ""),
-                "root_cause": issue.get("root_cause"),
-                "severity": issue.get("severity", "medium"),
-                "confidence": issue.get("confidence", 0.9),
-                "source": ["ai"],
-                "fix": global_fix,
-                "explanation": global_explanation,
-                "suggestion": global_suggestion
-            })
-            
-    print("\n[DEBUG] AI PARSED ISSUES:")
-    print(ai_issues)
-            
-    print("\n[DEBUG] BEFORE MERGE:")
-    print("Static:", static_issues)
-    print("Heuristic:", heuristic_issues)
-    print("Intent:", intent_issues)
-    print("AI:", ai_issues)
+        g_fix  = ai_insight.get("fix")
+        g_exp  = ai_insight.get("explanation")
+        g_sugg = ai_insight.get("suggestion")
+        for issue in (ai_insight.get("issues") or []):
+            if isinstance(issue, dict):
+                ai_issues.append({
+                    "line"       : issue.get("line"),
+                    "type"       : issue.get("type", "logical"),
+                    "message"    : issue.get("message", ""),
+                    "root_cause" : issue.get("root_cause"),
+                    "severity"   : issue.get("severity", "medium"),
+                    "confidence" : issue.get("confidence", 0.9),
+                    "source"     : ["ai"],
+                    "fix"        : g_fix,
+                    "explanation": g_exp,
+                    "suggestion" : g_sugg,
+                })
+    print(f"\n[DEBUG] MERGE INPUT — static:{len(static_issues)} heuristic:{len(heuristic_issues)} intent:{len(intent_issues)} ai:{len(ai_issues)}")
 
     # 5. Normalization and Deduplication
     merged_map = {}
