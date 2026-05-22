@@ -3,7 +3,7 @@ import Editor from "@monaco-editor/react";
 import IssueCard from "./components/IssueCard";
 import AnimatedTerminal from "./components/AnimatedTerminal";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://acqr.onrender.com";
 const SEV_VALUE = { error: 3, warning: 2, info: 1 };
 
 const SUCCESS_MESSAGES = [
