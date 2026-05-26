@@ -115,6 +115,209 @@
       ]
     }
   },
+  "ACQR-PY-0005": {
+    "error_id": "ACQR-PY-0005",
+    "category": "syntax_indentation_error",
+    "tags": ["syntax", "indentation", "whitespace"],
+    "signature": {
+      "source": "heuristic",
+      "match_keys": ["IndentationError", "unexpected indent", "expected an indented block"],
+      "regex_pattern": "indentationerror|unexpected indent|indented block"
+    },
+    "mental_model": {
+      "analogy_title": "The Book Chapter Hierarchy",
+      "analogy_body": "Think of nested code like a book with chapters, sections, and bullet points. Each level of detail must be indented consistently. If a bullet point is suddenly pushed out of alignment, the reader gets confused about which section it belongs to. Python is the same—it uses spaces to understand block ownership.",
+      "visual_ascii": "def greet():\n    print(\"Hello\")  <--- 4 spaces (Sub-section of function)\n  print(\"World\")    <--- 2 spaces! (Python is lost—where does this belong?)"
+    },
+    "explanation": {
+      "eli5": "You made a spacing mistake at the beginning of a line. In Python, spaces (indentation) tell the computer which lines of code belong inside functions, loops, or if-statements.",
+      "why_it_happened": "Unlike other languages that use curly braces `{}` to group code, Python uses indentation. Spacing must be consistent (standard is 4 spaces per block). Mixing tabs/spaces or having off-by-one indentation breaks this system.",
+      "how_to_avoid": "Use only spaces (not tabs) and let your editor handle indentation automatically. Never arbitrarily add spaces at the beginning of random lines."
+    },
+    "remediation": {
+      "bad_code": "def say_hello():\n  print(\"Hi!\")\n    print(\"Welcome!\")",
+      "good_code": "def say_hello():\n    print(\"Hi!\")\n    print(\"Welcome!\")",
+      "interactive_scaffolding": [
+        "Look at the highlighted line that has the spacing error.",
+        "Ensure all lines inside the same function/block start with the exact same amount of spaces.",
+        "Align the lines by hitting Backspace or Space to make them uniform (normally 4 spaces nested)."
+      ]
+    }
+  },
+  "ACQR-PY-0006": {
+    "error_id": "ACQR-PY-0006",
+    "category": "syntax_assignment_vs_equality",
+    "tags": ["syntax", "operators", "conditionals"],
+    "signature": {
+      "source": "heuristic",
+      "match_keys": ["invalid syntax", "cannot assign to", "assignment inside condition"],
+      "regex_pattern": "if\\s+\\w+\\s*=\\s*[^=]"
+    },
+    "mental_model": {
+      "analogy_title": "The Name Tag vs The Verification Check",
+      "analogy_body": "Using a single equals `=` is like putting a label on a jar (assignment). You write 'sugar' on the tape and paste it. Using a double equals `==` is like asking: 'Is this jar labeled sugar?' (comparison). In Python, putting a label on a jar *while* asking a question is illegal.",
+      "visual_ascii": "x = 5     <--- Labeling a jar 'x' with '5' (Assignment)\nif x == 5 <--- Checking if 'x' has value '5' (Equality check)\nif x = 5  <--- [ CRASH ! ] Labeling a jar inside a question!"
+    },
+    "explanation": {
+      "eli5": "You used a single equals `=` inside an if-statement or loop condition. A single `=` is for setting a variable, while a double `==` is used for comparing two values.",
+      "why_it_happened": "Python's syntax rules strictly prohibit assignments `=` inside conditional expressions to prevent accidental bugs where variables are overwritten instead of checked.",
+      "how_to_avoid": "Always use `==` when you want to ask 'is this equal to that?', and use `=` when assigning a value."
+    },
+    "remediation": {
+      "bad_code": "if status = \"admin\":\n    print(\"Welcome Admin!\")",
+      "good_code": "if status == \"admin\":\n    print(\"Welcome Admin!\")",
+      "interactive_scaffolding": [
+        "Look inside your `if` condition for a single equals `=` symbol.",
+        "Change that single `=` to double equals `==` to make it a comparison check.",
+        "Ensure you are not assigning a value inside your condition block."
+      ]
+    }
+  },
+  "ACQR-PY-0007": {
+    "error_id": "ACQR-PY-0007",
+    "category": "runtime_infinite_loop",
+    "tags": ["runtime", "loops", "hangs"],
+    "signature": {
+      "source": "heuristic",
+      "match_keys": ["infinite loop", "loop variable not updating", "TimeoutError"],
+      "regex_pattern": "while\\s+True|while\\s+\\w+\\s*([<>]=?|!=|==)\\s*\\w+"
+    },
+    "mental_model": {
+      "analogy_title": "The Endless Treadmill",
+      "analogy_body": "Imagine jumping onto a treadmill and turning it on, but forgetting to set a timer or a stop button. You will run forever until the power goes out. An infinite loop occurs when you tell Python to keep repeating a task, but forget to update the condition that lets it exit.",
+      "visual_ascii": "i = 0\nwhile i < 5:  <--- Condition checked (0 < 5 is True)\n    print(i)  <--- Prints 0. (But 'i' never updates! treadmill keeps rolling!)"
+    },
+    "explanation": {
+      "eli5": "Your program gets stuck in a loop that never ends. This happens because the condition keeping the loop running never changes to `False`.",
+      "why_it_happened": "In a `while` loop, Python checks the condition on every turn. If the variable in the condition is never modified inside the loop body, the comparison will always be `True`, locking the computer in an infinite execution cycle.",
+      "how_to_avoid": "Always ensure your loop body modifies the variable that is being checked in the loop condition, or use a `break` statement to escape."
+    },
+    "remediation": {
+      "bad_code": "count = 0\nwhile count < 5:\n    print(count)",
+      "good_code": "count = 0\nwhile count < 5:\n    print(count)\n    count += 1",
+      "interactive_scaffolding": [
+        "Look at your `while` loop condition. What variable controls when it stops?",
+        "Check inside the loop block. Are you modifying that control variable?",
+        "Add a step inside your loop that changes the variable (e.g. `count += 1`) so it eventually fails the check."
+      ]
+    }
+  },
+  "ACQR-PY-0008": {
+    "error_id": "ACQR-PY-0008",
+    "category": "runtime_undefined_variable",
+    "tags": ["runtime", "variables", "scope"],
+    "signature": {
+      "source": "heuristic",
+      "match_keys": ["NameError", "is not defined", "undefined variable"],
+      "regex_pattern": "is not defined|nameerror"
+    },
+    "mental_model": {
+      "analogy_title": "Calling a Missing Contact",
+      "analogy_body": "Imagine trying to dial a phone number that you never saved in your contact list. Your phone has no idea who you are trying to reach. A `NameError` means you asked Python to read a variable or call a function, but you never defined it in code first.",
+      "visual_ascii": "print(score)  <--- Score is not saved in contacts!\n                 ^ [ CRASH ! ] NameError: name 'score' is not defined"
+    },
+    "explanation": {
+      "eli5": "You tried to use a variable or function that you haven't created yet, or misspelled its name.",
+      "why_it_happened": "Python is a dynamic, line-by-line language. When it sees an identifier like `x`, it looks for a match in local and global memory tables. If it finds nothing, it throws a `NameError` and stops.",
+      "how_to_avoid": "Always declare and assign your variables (e.g. `total = 0`) *before* reading or executing calculations with them. Watch out for spelling mistakes!"
+    },
+    "remediation": {
+      "bad_code": "total_cost = price * qty\nprice = 10\nqty = 2",
+      "good_code": "price = 10\nqty = 2\ntotal_cost = price * qty",
+      "interactive_scaffolding": [
+        "Check which variable Python says is 'not defined'.",
+        "Verify the spelling of that variable. Is it exactly correct (case-sensitive)?",
+        "Ensure the line creating that variable is placed *above* the line using it."
+      ]
+    }
+  },
+  "ACQR-PY-0009": {
+    "error_id": "ACQR-PY-0009",
+    "category": "runtime_type_error_concat",
+    "tags": ["runtime", "types", "strings", "integers"],
+    "signature": {
+      "source": "heuristic",
+      "match_keys": ["TypeError: can only concatenate str", "must be str, not int", "unsupported operand type"],
+      "regex_pattern": "can only concatenate str|must be str, not int"
+    },
+    "mental_model": {
+      "analogy_title": "Mixing Apples and Screws",
+      "analogy_body": "Imagine writing a sentence on paper: 'My age is ' and then physically trying to glue a metal block representing the number '20' directly onto the sentence. They don't mix! Python treats text (strings) and numbers (integers) as completely different substances. You must convert the number to text first.",
+      "visual_ascii": "\"Age: \" + 20   <--- Glueing text and a metal integer!\n                ^ [ CRASH ! ] Python doesn't know how to glue these."
+    },
+    "explanation": {
+      "eli5": "You are trying to glue a string (text) and an integer (number) together using the `+` operator. Python does not auto-convert numbers to text like JavaScript does.",
+      "why_it_happened": "The `+` operator is overloaded: for numbers it performs addition, for strings it performs concatenation. When given a string and an integer, it cannot decide which operation to perform, raising a TypeError.",
+      "how_to_avoid": "Wrap your numbers in the `str()` converter (e.g. `str(20)`) or use modern f-strings: `f\"Age: {age}\"`."
+    },
+    "remediation": {
+      "bad_code": "print(\"Your score is \" + score)",
+      "good_code": "print(\"Your score is \" + str(score))",
+      "interactive_scaffolding": [
+        "Locate the `+` operator that joins the string and the number.",
+        "Wrap the number variable inside `str()` like `str(variable_name)`.",
+        "Alternatively, replace the line with an f-string: `f\"Your score is {score}\"`."
+      ]
+    }
+  },
+  "ACQR-PY-0010": {
+    "error_id": "ACQR-PY-0010",
+    "category": "runtime_index_out_of_range",
+    "tags": ["runtime", "lists", "indexing"],
+    "signature": {
+      "source": "heuristic",
+      "match_keys": ["IndexError", "list index out of range"],
+      "regex_pattern": "list index out of range|indexerror"
+    },
+    "mental_model": {
+      "analogy_title": "The Non-Existent Postbox",
+      "analogy_body": "Imagine an apartment building with exactly 3 mailboxes, labeled 0, 1, and 2. If a mail carrier attempts to deliver a letter into mailbox number 3, they will search forever and fail because it does not exist. Remember, list indexes always start at 0, not 1!",
+      "visual_ascii": "Items:  [ 'apple', 'banana', 'cherry' ]\nIndex:       0         1         2\nAccessing items[3]  <--- [ CRASH ! ] Box 3 is non-existent!"
+    },
+    "explanation": {
+      "eli5": "You tried to access an item from a list at a position (index) that does not exist because the list is too short.",
+      "why_it_happened": "Python lists are 0-indexed. A list with 5 items has indexes from `0` to `4`. Attempting to access `my_list[5]` or `my_list[len(my_list)]` will trigger an `IndexError` because there is no item at that boundary.",
+      "how_to_avoid": "Ensure your index is always strictly less than the length of the list (`len(my_list)`). Double-check for off-by-one errors."
+    },
+    "remediation": {
+      "bad_code": "fruits = [\"apple\", \"banana\"]\nprint(fruits[2])",
+      "good_code": "fruits = [\"apple\", \"banana\"]\nprint(fruits[1])",
+      "interactive_scaffolding": [
+        "Count the number of items in your list.",
+        "Remember that the maximum index you can access is `length - 1`.",
+        "Check your index variable to ensure it stays below this limit."
+      ]
+    }
+  },
+  "ACQR-PY-0011": {
+    "error_id": "ACQR-PY-0011",
+    "category": "runtime_key_error_dict",
+    "tags": ["runtime", "dictionaries", "keys"],
+    "signature": {
+      "source": "heuristic",
+      "match_keys": ["KeyError", "key not found"],
+      "regex_pattern": "keyerror"
+    },
+    "mental_model": {
+      "analogy_title": "Looking up a Word in a Missing Page",
+      "analogy_body": "Looking up a definition in a dictionary for a word that isn't printed in it is impossible. Python dictionaries store keys and values. If you try to fetch the value for a key that was never added, Python raises a KeyError.",
+      "visual_ascii": "dict = { \"name\": \"Bob\" }\ndict[\"age\"]  <--- [ CRASH ! ] Key 'age' was never printed!"
+    },
+    "explanation": {
+      "eli5": "You tried to look up a key in a dictionary, but that key does not exist in the dictionary map.",
+      "why_it_happened": "When you search a dictionary using square brackets `d[key]`, Python expects the key to exist. If it is missing, it raises a `KeyError` instead of returning `None` to prevent silent bugs.",
+      "how_to_avoid": "Use the `.get()` method (e.g. `d.get(\"age\", 0)`) which safely returns a default value instead of crashing if the key is missing."
+    },
+    "remediation": {
+      "bad_code": "user = {\"username\": \"clara\"}\nprint(user[\"email\"])",
+      "good_code": "user = {\"username\": \"clara\"}\nprint(user.get(\"email\", \"no-email@test.com\"))",
+      "interactive_scaffolding": [
+        "Check the key that Python says is missing.",
+        "Ensure you added that key to the dictionary before accessing it.",
+        "Consider replacing square bracket lookups `d[k]` with safe default lookups `d.get(k)`."
+      ]
+    }
+  },
   "ACQR-PY-0012": {
     "error_id": "ACQR-PY-0012",
     "category": "semantic_shadowing",
@@ -122,7 +325,7 @@
     "signature": {
       "source": "heuristic",
       "match_keys": ["shadows-builtin", "W0622", "Shadows built-in name"],
-      "regex_pattern": "shadows built-in"
+      "regex_pattern": "shadows built-in|shadows-builtin"
     },
     "mental_model": {
       "analogy_title": "Redefining the Dictionary",
@@ -144,37 +347,95 @@
       ]
     }
   },
-  "ACQR-PY-0021": {
-    "error_id": "ACQR-PY-0021",
-    "category": "runtime_division_by_zero",
-    "tags": ["math", "division", "crash"],
+  "ACQR-PY-0013": {
+    "error_id": "ACQR-PY-0013",
+    "category": "logical_global_scope_leak",
+    "tags": ["variables", "scope", "global"],
     "signature": {
       "source": "heuristic",
-      "match_keys": ["ZeroDivisionError", "division by zero", "unsafe division"],
-      "regex_pattern": "division by zero|unsafe division"
+      "match_keys": ["global variable", "UnboundLocalError", "local variable referenced before assignment"],
+      "regex_pattern": "local variable.*referenced before assignment"
     },
     "mental_model": {
-      "analogy_title": "The Black Hole Divide",
-      "analogy_body": "Dividing slices of pizza among friends is easy. Sharing 8 slices among 2 friends means 4 each. Sharing 8 slices among 0 friends is an impossible logical paradox. Python doesn't know how to handle this mathematical black hole and immediately crashes the entire computer program.",
-      "visual_ascii": "Result = 10 / divisor\nIf divisor == 0:  [ CRASH ! ]"
+      "analogy_title": "The One-Way Mirror",
+      "analogy_body": "Imagine standing in a room with a one-way mirror. You can look *out* and see the outside world (reading global variables). But if you try to reach *out* and move furniture in the street, you hit the glass unless you explicitly open a door (declaring global). Otherwise, Python thinks you are trying to buy new furniture inside your room.",
+      "visual_ascii": "counter = 0 (global)\ndef increment():\n    counter += 1  <--- [ CRASH ! ] Python thinks you have a LOCAL counter!"
     },
     "explanation": {
-      "eli5": "You are dividing a number by zero or a variable that can become zero. In mathematics and computer science, dividing by zero is undefined and causes a program crash.",
-      "why_it_happened": "Python encounters the division operator `/` and evaluates the denominator. If the denominator is `0`, it cannot produce a numerical output, so it raises a `ZeroDivisionError` which stops program execution.",
-      "how_to_avoid": "Always check if your divisor is zero using an `if` statement *before* doing the division."
+      "eli5": "You tried to modify a variable inside a function that was created outside the function, but forgot to tell Python that it is a global variable.",
+      "why_it_happened": "In Python, assigning to a variable inside a function automatically flags it as local. When you run `x += 1`, Python expects a local `x` to exist. If it doesn't, it raises an `UnboundLocalError`.",
+      "how_to_avoid": "Declare your variable as global inside the function using the `global` keyword: `global counter`."
     },
     "remediation": {
-      "bad_code": "average = total / count",
-      "good_code": "if count == 0:\n    average = 0\nelse:\n    average = total / count",
+      "bad_code": "count = 0\ndef add():\n    count += 1",
+      "good_code": "count = 0\ndef add():\n    global count\n    count += 1",
       "interactive_scaffolding": [
-        "Identify your denominator (the value you are dividing by).",
-        "Add a safety check check: `if denominator == 0:` to handle the zero case gracefully.",
-        "Place your division code inside the `else:` block."
+        "Find the variable that is throwing the UnboundLocalError.",
+        "Verify if it is defined outside the function boundary.",
+        "Add `global variable_name` as the first line inside the function body."
       ]
     }
   },
-  "ACQR-PY-0030": {
-    "error_id": "ACQR-PY-0030",
+  "ACQR-PY-0014": {
+    "error_id": "ACQR-PY-0014",
+    "category": "logical_append_returns_none",
+    "tags": ["logical", "lists", "methods"],
+    "signature": {
+      "source": "heuristic",
+      "match_keys": ["append returns None", "NoneType has no attribute", "assigning list append"],
+      "regex_pattern": "\\w+\\s*=\\s*\\w+\\.append\\("
+    },
+    "mental_model": {
+      "analogy_title": "The Handshake that Returns Nothing",
+      "analogy_body": "Imagine walking up to a locker and placing a package inside (appending an item). The action succeeds, but the locker door doesn't hand you back a new locker. If you try to save 'the result of placing the package' as a brand new locker, you are left holding nothing (None).",
+      "visual_ascii": "my_list = [1]\nresult = my_list.append(2)  <--- List is modified, but result is None!\nresult.append(3)            <--- [ CRASH ! ] NoneType has no append!"
+    },
+    "explanation": {
+      "eli5": "You did `list = list.append(item)`, expecting the variable to hold the new list. In Python, `.append()` modifies the list directly in place and returns `None`.",
+      "why_it_happened": "To optimize performance, Python's list methods (like `.append()`, `.sort()`, `.reverse()`) modify lists in-place. Because they modify the source object rather than copying it, they return the empty type `None`.",
+      "how_to_avoid": "Just call the `.append()` method by itself on its own line: `my_list.append(item)`. Never assign the return value of append back to a variable."
+    },
+    "remediation": {
+      "bad_code": "numbers = [1, 2]\nnumbers = numbers.append(3)\nprint(numbers)",
+      "good_code": "numbers = [1, 2]\nnumbers.append(3)\nprint(numbers)",
+      "interactive_scaffolding": [
+        "Find the line where you did `x = x.append(...)`.",
+        "Remove the assignment `x =` completely.",
+        "Keep only the standalone method call: `x.append(...)` on its own line."
+      ]
+    }
+  },
+  "ACQR-PY-0015": {
+    "error_id": "ACQR-PY-0015",
+    "category": "runtime_list_index_float",
+    "tags": ["runtime", "lists", "indexing", "division"],
+    "signature": {
+      "source": "heuristic",
+      "match_keys": ["list indices must be integers", "float indices", "TypeError: list indices must be integers or slices"],
+      "regex_pattern": "list indices must be integers or slices"
+    },
+    "mental_model": {
+      "analogy_title": "Searching for House 2.5",
+      "analogy_body": "Imagine walking down a street looking for house number 2.5. You will never find it, because houses are numbered in whole integers (1, 2, 3). In Python, lists are indexed by discrete integers. Even if a mathematical division results in `.0` (like `4 / 2`), Python treats it as a float, leading to a crash.",
+      "visual_ascii": "Items:  [ 'a', 'b', 'c' ]\nIndex:      0    1    2\nAccessing items[1.0]  <--- [ CRASH ! ] Integer expected, float found!"
+    },
+    "explanation": {
+      "eli5": "You tried to index a list using a decimal/float number (like `1.0` or `x / 2`). Python lists can only be indexed using whole integers.",
+      "why_it_happened": "In Python, the single division operator `/` always produces a float (e.g. `4 / 2` is `2.0`). Attempting to use a float as a list index triggers a TypeError because indices must be precise integers.",
+      "how_to_avoid": "Use double-slash division `//` (floor division) which always drops the decimal and returns a clean integer, or wrap your index in `int()`."
+    },
+    "remediation": {
+      "bad_code": "items = [\"a\", \"b\", \"c\"]\nmidpoint = len(items) / 2\nprint(items[midpoint])",
+      "good_code": "items = [\"a\", \"b\", \"c\"]\nmidpoint = len(items) // 2\nprint(items[midpoint])",
+      "interactive_scaffolding": [
+        "Locate where you calculated your index value.",
+        "If you are using division `/`, change it to floor division `//`.",
+        "Alternatively, wrap the calculation in the `int()` constructor: `int(index)`."
+      ]
+    }
+  },
+  "ACQR-PY-0016": {
+    "error_id": "ACQR-PY-0016",
     "category": "syntax_javascript_operators",
     "tags": ["syntax", "javascript-vs-python", "operators"],
     "signature": {

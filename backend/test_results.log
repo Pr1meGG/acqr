@@ -1,14 +1,14 @@
 ACQR FAST TEST RESULTS (deterministic pipeline)
-Run at: 2026-05-26T18:14:09.216011
+Run at: 2026-05-26T19:34:13.273999
 
 ════════════════════════════════════════════════════════════════════════
-  ACQR TEST SUMMARY  —  2026-05-26 18:14:09
+  ACQR TEST SUMMARY  —  2026-05-26 19:34:13
 ════════════════════════════════════════════════════════════════════════
   Total test cases  : 100
   Cases with issues : 77
   Clean cases       : 23
   Total issues      : 81
-  Issues with a fix : 14
+  Issues with a fix : 57
 ────────────────────────────────────────────────────────────────────────
   BY TYPE:
     syntax           63
@@ -105,9 +105,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    print("hi")'
 
 ════════════════════════════════════════════════════════════════════════
   TEST   7
@@ -165,9 +166,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after function definition on line 1
          → Python cannot parse this line: expected an indented block after function definition on line 1
+         🔧 replace line 2 → '    return 5'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  11
@@ -193,10 +195,11 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=1  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✔ fix]
          invalid syntax
          → Python cannot parse this line: invalid syntax
          💡 Review the line for typos or missing characters.
+         🔧 replace line 1 → 'if (x > 5:)'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  13
@@ -298,9 +301,10 @@ DETAILED RESULTS
 
   🔍  2 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'try' statement on line 1
          → Python cannot parse this line: expected an indented block after 'try' statement on line 1
+         🔧 replace line 2 → '    x=1'
 
   [2]  line=3  type=syntax  sev=high  src=['heuristic']  [✔ fix]
          Missing ':' after 'except' statement
@@ -362,9 +366,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after function definition on line 1
          → Python cannot parse this line: expected an indented block after function definition on line 1
+         🔧 replace line 2 → '    if True'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  24
@@ -401,9 +406,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    if x > 5:'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  27
@@ -415,9 +421,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    print("always true")'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  28
@@ -429,9 +436,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    print("never runs")'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  29
@@ -444,9 +452,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'while' statement on line 1
          → Python cannot parse this line: expected an indented block after 'while' statement on line 1
+         🔧 replace line 2 → '    break'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  30
@@ -459,9 +468,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after function definition on line 1
          → Python cannot parse this line: expected an indented block after function definition on line 1
+         🔧 replace line 2 → '    return 1'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  31
@@ -473,9 +483,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  32
@@ -487,9 +498,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  33
@@ -501,9 +513,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'for' statement on line 1
          → Python cannot parse this line: expected an indented block after 'for' statement on line 1
+         🔧 replace line 2 → '    print(i)'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  34
@@ -515,9 +528,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  35
@@ -532,9 +546,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  36
@@ -549,9 +564,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=3  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=3  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 2
          → Python cannot parse this line: expected an indented block after 'if' statement on line 2
+         🔧 replace line 3 → '    x = 6'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  37
@@ -565,9 +581,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    x = 10'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  38
@@ -579,9 +596,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'while' statement on line 1
          → Python cannot parse this line: expected an indented block after 'while' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  39
@@ -594,9 +612,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    if False:'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  40
@@ -610,9 +629,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  41
@@ -625,9 +645,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=3  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=3  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 2
          → Python cannot parse this line: expected an indented block after 'if' statement on line 2
+         🔧 replace line 3 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  42
@@ -639,9 +660,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    x = 5'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  43
@@ -653,9 +675,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  44
@@ -667,9 +690,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  45
@@ -682,9 +706,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=3  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=3  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 2
          → Python cannot parse this line: expected an indented block after 'if' statement on line 2
+         🔧 replace line 3 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  46
@@ -696,9 +721,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  47
@@ -710,9 +736,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  48
@@ -724,9 +751,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  49
@@ -738,9 +766,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  50
@@ -754,9 +783,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  51
@@ -887,9 +917,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'for' statement on line 1
          → Python cannot parse this line: expected an indented block after 'for' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  63
@@ -901,9 +932,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after function definition on line 1
          → Python cannot parse this line: expected an indented block after function definition on line 1
+         🔧 replace line 2 → '    return x'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  64
@@ -1013,9 +1045,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after function definition on line 1
          → Python cannot parse this line: expected an indented block after function definition on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  73
@@ -1027,9 +1060,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after function definition on line 1
          → Python cannot parse this line: expected an indented block after function definition on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  74
@@ -1061,9 +1095,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after function definition on line 1
          → Python cannot parse this line: expected an indented block after function definition on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  76
@@ -1075,9 +1110,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  77
@@ -1132,9 +1168,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after function definition on line 1
          → Python cannot parse this line: expected an indented block after function definition on line 1
+         🔧 replace line 2 → '    a=1'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  82
@@ -1148,9 +1185,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'if' statement on line 1
          → Python cannot parse this line: expected an indented block after 'if' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  83
@@ -1177,9 +1215,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after function definition on line 1
          → Python cannot parse this line: expected an indented block after function definition on line 1
+         🔧 replace line 2 → '    return'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  85
@@ -1191,9 +1230,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after class definition on line 1
          → Python cannot parse this line: expected an indented block after class definition on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  86
@@ -1294,9 +1334,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after function definition on line 1
          → Python cannot parse this line: expected an indented block after function definition on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  95
@@ -1308,9 +1349,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after function definition on line 1
          → Python cannot parse this line: expected an indented block after function definition on line 1
+         🔧 replace line 2 → '    global x'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  96
@@ -1324,9 +1366,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✔ fix]
          expected an indented block after 'try' statement on line 1
          → Python cannot parse this line: expected an indented block after 'try' statement on line 1
+         🔧 replace line 2 → '    pass'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  97

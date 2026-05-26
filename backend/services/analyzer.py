@@ -263,8 +263,11 @@ def validate_and_repair_fix(code: str, fix: dict) -> tuple:
         # when parsed in isolation (avoids offering a fix that makes things worse).
         if len(changes) == 1:
             isolated = changes[0].get("replacement", "").strip()
+            test_parse = isolated
+            if isolated.endswith(":") and any(isolated.startswith(kw) for kw in ["if", "elif", "else", "for", "while", "def", "class", "with", "try", "except", "finally"]):
+                test_parse = isolated + "\n    pass"
             try:
-                ast.parse(isolated)
+                ast.parse(test_parse)
             except SyntaxError:
                 return None, None
 
@@ -437,6 +440,39 @@ def detect_logical_and_lint_issues(code: str) -> List[Dict]:
                     "suggestion": "Check if denominator is zero before division."
                 })
                 
+        # List append returns None
+        if re.search(r"\w+\s*=\s*\w+\.append\(", trimmed):
+            issues.append({
+                "line": line_num,
+                "type": "logical",
+                "message": "Assigning list append to variable (returns None)",
+                "root_cause": "append() modifies list in place and returns None",
+                "severity": "medium",
+                "confidence": 0.95,
+                "source": ["heuristic"],
+                "fix": None,
+                "explanation": "Calling append returns None, which overwrites your list.",
+                "suggestion": "Call append on its own line: list.append(item)."
+            })
+
+        # List index with float division
+        if "/" in trimmed and "[" in trimmed and "]" in trimmed:
+            # Check if division occurs inside bracket indices, e.g. items[len(items)/2]
+            match = re.search(r"\[[^\]]*/[^\]]*\]", trimmed)
+            if match and "//" not in match.group(0):
+                issues.append({
+                    "line": line_num,
+                    "type": "runtime",
+                    "message": "TypeError: list indices must be integers or slices (float division index)",
+                    "root_cause": "Division '/' produces a float which cannot index a list",
+                    "severity": "medium",
+                    "confidence": 0.9,
+                    "source": ["heuristic"],
+                    "fix": None,
+                    "explanation": "Using '/' division inside list brackets results in a float index.",
+                    "suggestion": "Use integer floor division '//' instead."
+                })
+
     # 2. AST-based heuristics
     try:
         tree = ast.parse(code)
@@ -495,28 +531,61 @@ def detect_logical_and_lint_issues(code: str) -> List[Dict]:
 # ---------------------------------------------------------------------------
 _SYNTAX_FIX_KEYWORDS = frozenset(["if", "elif", "else", "for", "while", "def", "class", "with", "try", "except", "finally"])
 
-def _syntax_fix(line_num: int, msg: str, line_content: str) -> Dict | None:
+def _find_and_fix_unclosed_brackets(lines: list, error_line: int) -> tuple | None:
+    """
+    Scan backward from error_line to find unbalanced opening brackets and return (line_num, repaired_content).
+    """
+    for i in range(min(error_line - 1, len(lines) - 1), -1, -1):
+        line = lines[i]
+        # Skip comment lines or empty lines
+        if not line.strip() or line.strip().startswith("#"):
+            continue
+        for open_ch, close_ch in [("(", ")"), ("[", "]"), ("{", "}")]:
+            diff = line.count(open_ch) - line.count(close_ch)
+            if diff > 0:
+                repaired = line.rstrip() + (close_ch * diff)
+                return i + 1, repaired
+    return None
+
+def _syntax_fix(line_num: int, msg: str, line_content: str, lines: list = None) -> Dict | None:
     """Return a structured fix for the most common syntax errors, or None."""
     trimmed = line_content.strip()
+    msg_lower = msg.lower()
 
-    # Missing colon
-    if "expected ':'" in msg or "was expecting ':'" in msg:
-        first_tok = trimmed.split()[0] if trimmed else ""
-        if first_tok in _SYNTAX_FIX_KEYWORDS and not trimmed.endswith(":"):
-            return make_structured_fix(line_num, line_content.rstrip() + ":")
+    # 1. Missing colon on block headers
+    if "expected ':'" in msg_lower or "was expecting ':'" in msg_lower or "expected block" in msg_lower:
+        for kw in _SYNTAX_FIX_KEYWORDS:
+            if trimmed.startswith(kw) and not trimmed.endswith(":"):
+                return make_structured_fix(line_num, line_content.rstrip() + ":")
 
-    # Unterminated / mismatched quotes
-    if "unterminated string" in msg.lower() or "EOL while scanning" in msg:
+    # 2. Unterminated strings or mismatched quotes
+    if "unterminated string" in msg_lower or "eol while scanning" in msg_lower or "invalid syntax" in msg_lower:
         repaired, _ = repair_unterminated_string(line_content)
         if repaired:
             return make_structured_fix(line_num, repaired)
 
-    # Unclosed parenthesis / bracket
-    if "was never closed" in msg or "unexpected EOF" in msg or "unmatched" in msg:
+    # 3. Unclosed parenthesis / bracket on the current line
+    if "was never closed" in msg_lower or "unexpected eof" in msg_lower or "unmatched" in msg_lower or "invalid syntax" in msg_lower:
         for open_ch, close_ch in [("(", ")"), ("[", "]"), ("{", "}")]:
             diff = line_content.count(open_ch) - line_content.count(close_ch)
             if diff > 0:
-                return make_structured_fix(line_num, line_content.rstrip() + close_ch * diff)
+                return make_structured_fix(line_num, line_content.rstrip() + (close_ch * diff))
+
+    # 4. Indentation normalizer
+    if "indent" in msg_lower or "block" in msg_lower or "indentationerror" in msg_lower:
+        # Case A: Expected indented block
+        if "expected an indented block" in msg_lower:
+            if line_content:
+                return make_structured_fix(line_num, "    " + line_content)
+        # Case B: Unexpected indent
+        if "unexpected indent" in msg_lower:
+            if line_content:
+                stripped = line_content.lstrip()
+                prev_indent = ""
+                if lines and line_num > 1:
+                    prev_line = lines[line_num - 2]
+                    prev_indent = prev_line[:len(prev_line) - len(prev_line.lstrip())]
+                return make_structured_fix(line_num, prev_indent + stripped)
 
     return None
 
@@ -536,7 +605,13 @@ def detect_syntax_errors(code: str) -> List[Dict]:
         lines    = code.splitlines()
         line_content = lines[line_num - 1] if 0 < line_num <= len(lines) else ""
 
-        fix = _syntax_fix(line_num, msg, line_content)
+        fix = _syntax_fix(line_num, msg, line_content, lines)
+        # If current line fix fails, check backward for unclosed brackets
+        if not fix and ("was never closed" in msg or "unexpected eof" in msg.lower() or "unmatched" in msg or "invalid syntax" in msg):
+            repaired_info = _find_and_fix_unclosed_brackets(lines, line_num)
+            if repaired_info:
+                fix_line_num, repaired_line = repaired_info
+                fix = make_structured_fix(fix_line_num, repaired_line)
 
         explanation = f"Python cannot parse this line: {msg}"
         suggestion  = None
@@ -627,6 +702,28 @@ def detect_structural_issues(code: str) -> List[Dict]:
                 "explanation": f"'{op}' is a JavaScript operator. Python uses '{'==' if op == '===' else '!='}' instead.",
                 "suggestion" : f"Replace '{op}' with '{'==' if op == '===' else '!='}'.",
             })
+
+        # ── 4. Assignment vs Equality ─────────────────────────────────────────
+        if stripped.startswith("if ") and "=" in no_comment and not any(op in no_comment for op in ["==", "!=", "<=", ">="]):
+            match = re.search(r"if\s+([a-zA-Z_]\w*)\s*=\s*([^\s#]+)", no_comment)
+            if match:
+                var_name = match.group(1)
+                val_val = match.group(2)
+                # Remove trailing colon if present for replacing
+                val_val_clean = val_val.rstrip(":")
+                fix_line = line.replace(f"{var_name} = {val_val_clean}", f"{var_name} == {val_val_clean}").replace(f"{var_name}={val_val_clean}", f"{var_name} == {val_val_clean}")
+                issues.append({
+                    "line"       : line_num,
+                    "type"       : "syntax",
+                    "message"    : "Assignment vs Equality (single '=' in conditional)",
+                    "root_cause" : "Single '=' used inside an if condition",
+                    "severity"   : "high",
+                    "confidence" : 0.95,
+                    "source"     : ["heuristic"],
+                    "fix"        : make_structured_fix(line_num, fix_line),
+                    "explanation": f"You used a single '=' inside your 'if' statement on line {line_num}, which is an assignment. Python requires double '==' for comparing values.",
+                    "suggestion" : f"Change '=' to '==' on line {line_num}.",
+                })
 
         # ── 3. Unclosed brackets/parens tracked across lines ──────────────────
         for ch in line:
@@ -732,10 +829,13 @@ def analyze_code(code: str) -> Dict[str, List[Dict[str, Any]]]:
                 err_item["mental_model"] = bpeid_rec.get("mental_model")
                 err_item["remediation"] = bpeid_rec.get("remediation")
                 if bpeid_rec.get("explanation"):
-                    eli5 = bpeid_rec["explanation"].get("eli5")
+                    explanation_data = bpeid_rec["explanation"]
+                    eli5 = explanation_data.get("eli5")
                     if eli5:
                         err_item["explanation"] = eli5
                         err_item["short_explanation"] = eli5
+                    err_item["why_it_happened"] = explanation_data.get("why_it_happened")
+                    err_item["how_to_avoid"] = explanation_data.get("how_to_avoid")
 
             final.append(err_item)
         return {"errors": final}
@@ -926,10 +1026,13 @@ def analyze_code(code: str) -> Dict[str, List[Dict[str, Any]]]:
             err_item["mental_model"] = bpeid_rec.get("mental_model")
             err_item["remediation"] = bpeid_rec.get("remediation")
             if bpeid_rec.get("explanation"):
-                eli5 = bpeid_rec["explanation"].get("eli5")
+                explanation_data = bpeid_rec["explanation"]
+                eli5 = explanation_data.get("eli5")
                 if eli5:
                     err_item["explanation"] = eli5
                     err_item["short_explanation"] = eli5
+                err_item["why_it_happened"] = explanation_data.get("why_it_happened")
+                err_item["how_to_avoid"] = explanation_data.get("how_to_avoid")
 
         errors_list.append(err_item)
 

@@ -4,7 +4,7 @@ import IssueCard from "./components/IssueCard";
 import AnimatedTerminal from "./components/AnimatedTerminal";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "https://acqr.onrender.com";
-const SEV_VALUE = { error: 3, warning: 2, info: 1 };
+const SEV_VALUE = { error: 3, warning: 2, info: 1, high: 3, medium: 2, low: 1 };
 
 const SUCCESS_MESSAGES = [
   { title: "✨ Clean Code", desc: "Everything looks solid." },
@@ -39,6 +39,15 @@ function buildFlat(groups) {
   }));
 }
 
+const getMappedSev = (severity) => {
+  if (!severity) return "error";
+  const s = severity.toLowerCase();
+  if (s === "high" || s === "error") return "error";
+  if (s === "medium" || s === "warning") return "warning";
+  if (s === "low" || s === "info" || s === "lint") return "info";
+  return "error";
+};
+
 export default function App() {
   const [code, setCode] = useState(
     "# Write your code and press Analyze\nprint(\"Hello, ACQR!\")\n\nx = 10\nif x > 5\n  print(\"x is big\")"
@@ -51,6 +60,7 @@ export default function App() {
   const [hoverIdx,     setHoverIdx]     = useState(-1);
   const [consoleOpen,  setConsoleOpen]  = useState(false);
   const [panelVisible, setPanelVisible] = useState(false);
+  const [isLargeScreen, setIsLargeScreen] = useState(window.innerWidth >= 1024);
 
   const editorRef    = useRef(null);
   const monacoRef    = useRef(null);
@@ -58,6 +68,7 @@ export default function App() {
   const stateRef     = useRef({ run: null, loading: false, applyFix: null });
   const activeIdxRef = useRef(-1);
   const flatRef      = useRef([]);
+  const sidebarRef   = useRef(null);
 
   const grouped    = useMemo(() => groupErrors(result?.errors), [result]);
   const flat       = useMemo(() => buildFlat(grouped), [grouped]);
@@ -70,19 +81,31 @@ export default function App() {
     return SUCCESS_MESSAGES[0];
   }, [result, issueCount]);
 
+  // Keep track of resized screens for proper responsive width and height metrics
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLargeScreen(window.innerWidth >= 1024);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => { flatRef.current = flat; }, [flat]);
   useEffect(() => { if (result !== null) setPanelVisible(true); }, [result]);
+  useEffect(() => { activeIdxRef.current = activeIdx; }, [activeIdx]);
 
   // ── Analysis ──────────────────────────────────────────────────────────────
-  const runAnalysis = useCallback(async () => {
-    if (!code.trim() || stateRef.current.loading) return;
+  // Takes optional codeToAnalyze parameter to enable seamless auto-reanalysis
+  const runAnalysis = useCallback(async (codeToAnalyze = null) => {
+    const codeText = typeof codeToAnalyze === "string" ? codeToAnalyze : code;
+    if (!codeText.trim() || stateRef.current.loading) return;
     setReqError("");
     setLoading(true);
     setExecution(null);
     try {
       const [aRes, rRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/analyze`,  { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }) }),
-        fetch(`${API_BASE_URL}/run-code`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }) }),
+        fetch(`${API_BASE_URL}/analyze`,  { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: codeText }) }),
+        fetch(`${API_BASE_URL}/run-code`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: codeText }) }),
       ]);
       setResult(await aRes.json());
       setExecution(await rRes.json());
@@ -94,6 +117,7 @@ export default function App() {
   }, [code]);
 
   // ── Apply fix ─────────────────────────────────────────────────────────────
+  // Automatically syncs editor code back to state and triggers auto-analysis
   const applyFix = useCallback((fixOrChanges, flatIndex, issueMsg) => {
     const editor = editorRef.current;
     const monaco = monacoRef.current;
@@ -107,12 +131,21 @@ export default function App() {
       const endCol = editor.getModel().getLineMaxColumn(c.line_end);
       return { range: new monaco.Range(c.line_start, 1, c.line_end, endCol), text: c.replacement };
     }));
+
+    // Capture updated code immediately from editor
+    const updatedCode = editor.getValue();
+    setCode(updatedCode);
     
     // Log success to console
     setExecution(prev => ({
       ...prev,
       output: (prev?.output ? prev.output + "\n" : "") + `[ACQR] ⚡ Applied fix: ${issueMsg || "Automatic correction"}\n[ACQR] ✓ Code updated successfully.`
     }));
+
+    // Auto re-analyze immediately after a minor delay for visual comfort (Task 3)
+    setTimeout(() => {
+      stateRef.current.run(updatedCode);
+    }, 800); // 800ms coordinates perfectly with card fade-out timing (1200ms)
   }, []);
 
   const handleRemoveIssue = useCallback((flatIndex) => {
@@ -142,12 +175,36 @@ export default function App() {
   useEffect(() => { stateRef.current = { run: runAnalysis, loading, applyFix }; });
   useEffect(() => { setActiveIdx(-1); activeIdxRef.current = -1; }, [result]);
 
+  // Bi-directional synchronization: Click on card -> scroll editor AND scroll card into view
   useEffect(() => {
     if (activeIdx < 0) return;
-    for (const g of flatRef.current)
-      for (const issue of g.issues)
-        if (issue.flatIndex === activeIdx) { scrollToLine(issue.line); return; }
+    
+    // 1. Scroll editor
+    for (const g of flatRef.current) {
+      for (const issue of g.issues) {
+        if (issue.flatIndex === activeIdx) {
+          scrollToLine(issue.line);
+          break;
+        }
+      }
+    }
+
+    // 2. Scroll sidebar card smoothly
+    const cardEl = document.getElementById(`issue-card-${activeIdx}`);
+    if (cardEl && sidebarRef.current) {
+      cardEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
   }, [activeIdx, scrollToLine]);
+
+  // Trigger Monaco resize layout on panelVisibility changes
+  useEffect(() => {
+    if (editorRef.current) {
+      const timer = setTimeout(() => {
+        editorRef.current.layout();
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [panelVisible]);
 
   // ── Monaco decorations ────────────────────────────────────────────────────
   useEffect(() => {
@@ -163,14 +220,17 @@ export default function App() {
         .filter(e => Number.isInteger(e.line) && e.line >= 1 && e.line <= maxLine)
         .map(e => {
           const isHovered = e.flatIndex === hoverIdx || e.flatIndex === activeIdx;
-          const sevClass = e.sev === "warning" ? "acqr-warning-line" : "acqr-error-line";
+          const mappedSev = getMappedSev(e.severity);
+          const sevClass = `acqr-${mappedSev}-line`;
+          const glyphClass = `acqr-${mappedSev}-glyph`;
+          
           return {
             range: new monaco.Range(e.line, 1, e.line, 1),
             options: {
               isWholeLine: true,
               className: `${sevClass} ${isHovered ? "acqr-line-hover" : ""}`.trim(),
-              glyphMarginClassName: e.sev === "warning" ? "acqr-warning-glyph" : "acqr-error-glyph",
-              inlineClassName: "acqr-error-underline",
+              glyphMarginClassName: glyphClass,
+              inlineClassName: mappedSev === "error" ? "acqr-error-underline" : "",
               hoverMessage: { value: `$(${e.severity || "error"}) ${e.error || ""}` },
             },
           };
@@ -186,6 +246,19 @@ export default function App() {
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
       if (!stateRef.current.loading) stateRef.current.run();
     });
+
+    // Bi-directional sync: cursor position changes trigger sidebar card highlight
+    editor.onDidChangeCursorPosition(ev => {
+      const line = ev.position.lineNumber;
+      const issueOnLine = flatRef.current
+        .flatMap(g => g.issues)
+        .find(iss => Number(iss.line) === line);
+      
+      if (issueOnLine && issueOnLine.flatIndex !== activeIdxRef.current) {
+        setActiveIdx(issueOnLine.flatIndex);
+        activeIdxRef.current = issueOnLine.flatIndex;
+      }
+    });
   };
 
   // ── Global keyboard ───────────────────────────────────────────────────────
@@ -200,14 +273,14 @@ export default function App() {
 
   // ── Editor border state ───────────────────────────────────────────────────
   const editorBorderStyle = issueCount > 0
-    ? { border: "1px solid rgba(244,63,94,0.4)", boxShadow: "0 0 0 3px rgba(244,63,94,0.08), inset 0 0 30px rgba(244,63,94,0.03)" }
+    ? { border: "1px solid rgba(244,63,94,0.3)", boxShadow: "0 0 0 3px rgba(244,63,94,0.06), inset 0 0 30px rgba(244,63,94,0.02)" }
     : result !== null
-    ? { border: "1px solid rgba(16,185,129,0.35)", boxShadow: "0 0 0 3px rgba(16,185,129,0.06), inset 0 0 30px rgba(16,185,129,0.02)" }
+    ? { border: "1px solid rgba(16,185,129,0.3)", boxShadow: "0 0 0 3px rgba(16,185,129,0.04), inset 0 0 30px rgba(16,185,129,0.01)" }
     : { border: "1px solid rgba(99,102,241,0.15)", boxShadow: "none" };
 
   return (
     <div
-      className="flex flex-col h-screen w-screen text-text overflow-hidden"
+      className="flex flex-col h-screen w-screen text-text overflow-hidden relative"
       style={{
         background: "linear-gradient(135deg, #020817 0%, #060d1f 40%, #080f22 100%)",
       }}
@@ -252,7 +325,7 @@ export default function App() {
           </div>
           <div>
             <span
-              className="font-black tracking-tight text-[16px]"
+              className="font-label font-bold tracking-tight text-[16px]"
               style={{
                 background: "linear-gradient(90deg, #818cf8, #22d3ee)",
                 WebkitBackgroundClip: "text",
@@ -261,20 +334,20 @@ export default function App() {
             >
               ACQR
             </span>
-            <span className="text-text-muted text-[12px] ml-2 font-medium">AI Code Reviewer</span>
+            <span className="text-text-muted text-[12px] ml-2 font-medium font-label">AI Code Reviewer</span>
           </div>
         </div>
 
         {/* Right controls */}
         <div className="flex items-center gap-3">
           {reqError && (
-            <span className="text-[11px] text-[#fb7185] bg-[#f43f5e]/10 px-3 py-1 rounded-full border border-[#f43f5e]/20">
+            <span className="text-[11px] text-[#fb7185] bg-[#f43f5e]/10 px-3 py-1 rounded-full border border-[#f43f5e]/20 font-label">
               {reqError}
             </span>
           )}
           {result && !loading && (
             <span
-              className={`text-[11px] font-semibold px-3 py-1 rounded-full border transition-all duration-300 ${
+              className={`text-[11px] font-semibold px-3 py-1 rounded-full border transition-all duration-300 font-label ${
                 issueCount === 0
                   ? "text-[#34d399] bg-[#10b981]/10 border-[#10b981]/25"
                   : "text-[#fb7185] bg-[#f43f5e]/10 border-[#f43f5e]/25"
@@ -283,7 +356,7 @@ export default function App() {
               {issueCount === 0 ? "✓ All clean" : `${issueCount} issue${issueCount !== 1 ? "s" : ""} found`}
             </span>
           )}
-          <button onClick={runAnalysis} disabled={loading} className="btn-primary px-5 py-2.5">
+          <button onClick={() => runAnalysis()} disabled={loading} className="btn-primary px-5 py-2.5 font-label">
             {loading ? (
               <span className="flex items-center gap-2">
                 <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -298,12 +371,15 @@ export default function App() {
       </header>
 
       {/* ── Main workspace ────────────────────────────────────────────── */}
-      <div className="relative z-10 flex flex-row flex-1 overflow-hidden">
+      <div className="relative z-10 flex flex-col lg:flex-row flex-1 overflow-hidden">
 
         {/* ── EDITOR PANEL ───────────────────────────────────────────── */}
         <div
-          className="flex flex-col p-4 transition-all duration-300 ease-in-out"
-          style={{ width: panelVisible ? "60%" : "100%" }}
+          className="flex flex-col p-4 transition-all duration-300 ease-in-out min-w-0"
+          style={{
+            width: isLargeScreen ? (panelVisible ? "60%" : "100%") : "100%",
+            height: isLargeScreen ? "100%" : (panelVisible ? "45%" : "100%"),
+          }}
         >
           {/* Editor container */}
           <div
@@ -329,12 +405,13 @@ export default function App() {
                 cursorBlinking: "smooth",
                 cursorSmoothCaretAnimation: "on",
                 smoothScrolling: true,
+                automaticLayout: true, // Auto recalculate editor bounds
               }}
             />
           </div>
 
           {/* Hint */}
-          <p className="mt-2 px-1 text-[11px] text-text-muted italic transition-opacity duration-200">
+          <p className="mt-2 px-1 text-[11px] text-text-muted italic transition-opacity duration-200 font-mono">
             {loading
               ? "⟳ Analyzing…"
               : result
@@ -347,36 +424,61 @@ export default function App() {
         <div
           className="flex flex-col overflow-hidden transition-all duration-300 ease-in-out"
           style={{
-            width: panelVisible ? "40%" : "0%",
+            width: isLargeScreen ? (panelVisible ? "40%" : "0%") : "100%",
+            height: isLargeScreen ? "100%" : (panelVisible ? "55%" : "0%"),
             opacity: panelVisible ? 1 : 0,
-            borderLeft: "1px solid rgba(99,102,241,0.1)",
+            borderLeft: isLargeScreen && panelVisible ? "1px solid rgba(99,102,241,0.1)" : "none",
+            borderTop: !isLargeScreen && panelVisible ? "1px solid rgba(99,102,241,0.1)" : "none",
             background: "rgba(8,13,30,0.7)",
             backdropFilter: "blur(16px)",
+            visibility: panelVisible ? "visible" : "hidden", // Completely eliminates bleeding
           }}
         >
-          <div className="flex flex-col flex-1 overflow-y-auto p-4 min-w-[300px]">
-
-            {/* ── Loading skeletons ──────────────────────────────────── */}
+          <div
+            ref={sidebarRef}
+            className="flex flex-col flex-1 overflow-y-auto p-4 min-w-0"
+          >
+            {/* ── High-Fidelity loading skeletons ──────────────────────────────────── */}
             {loading && (
               <div className="flex flex-col gap-4">
                 {[1, 2, 3].map(n => (
                   <div
                     key={n}
-                    className="h-24 rounded-xl animate-pulse"
+                    className="relative rounded-2xl border-l-[4px] border-l-[#1e293b] p-5 flex flex-col gap-3.5 overflow-hidden"
                     style={{
-                      background: "linear-gradient(90deg, rgba(11,21,48,0.8) 25%, rgba(17,31,66,0.8) 50%, rgba(11,21,48,0.8) 75%)",
-                      backgroundSize: "200% 100%",
-                      animation: `shimmer 1.5s linear infinite, pulse 2s ease-in-out infinite`,
-                      border: "1px solid rgba(99,102,241,0.1)",
+                      background: `linear-gradient(145deg, rgba(16,20,30,0.6) 0%, rgba(10,14,24,0.6) 100%)`,
+                      border: "1px solid rgba(99,102,241,0.05)",
                     }}
-                  />
+                  >
+                    {/* Shimmer overlay */}
+                    <div
+                      className="absolute inset-0 pointer-events-none animate-shimmer"
+                      style={{
+                        background: "linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.04) 50%, transparent 100%)",
+                        backgroundSize: "200% 100%",
+                      }}
+                    />
+                    {/* Header skeleton */}
+                    <div className="flex justify-between items-center w-full">
+                      <div className="h-3 w-1/3 bg-slate-800 rounded animate-pulse" />
+                      <div className="h-3.5 w-8 bg-slate-800 rounded-full animate-pulse" />
+                    </div>
+                    {/* Body skeleton */}
+                    <div className="h-4 w-5/6 bg-slate-800 rounded animate-pulse" />
+                    <div className="h-3.5 w-full bg-slate-800/60 rounded animate-pulse" />
+                    {/* Actions skeleton */}
+                    <div className="flex gap-3 mt-1">
+                      <div className="h-8.5 flex-1 bg-slate-800 rounded-xl animate-pulse" />
+                      <div className="h-8.5 w-16 bg-slate-800 rounded-xl animate-pulse" />
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
 
             {/* ── Success state ─────────────────────────────────────── */}
             {result && !loading && issueCount === 0 && (
-              <div className="flex flex-col items-center justify-center h-full gap-5 animate-fade-in px-4 text-center">
+              <div className="flex flex-col items-center justify-center h-full gap-5 animate-fade-in px-4 text-center py-8">
                 <div
                   className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl"
                   style={{
@@ -389,7 +491,7 @@ export default function App() {
                 </div>
                 <div>
                   <p
-                    className="font-black text-xl mb-1"
+                    className="font-label font-bold text-xl mb-1"
                     style={{
                       background: "linear-gradient(90deg, #34d399, #22d3ee)",
                       WebkitBackgroundClip: "text",
@@ -398,7 +500,7 @@ export default function App() {
                   >
                     {successMsg.title}
                   </p>
-                  <p className="text-[13px] text-text-muted mt-2">{successMsg.desc}</p>
+                  <p className="text-[13px] text-text-muted mt-2 font-label">{successMsg.desc}</p>
                 </div>
                 <button
                   onClick={() => {
@@ -406,7 +508,7 @@ export default function App() {
                     setResult(null);
                     setPanelVisible(false);
                   }}
-                  className="btn-ghost text-[12px] mt-1"
+                  className="btn-ghost text-[12px] mt-1 font-label"
                 >
                   Try breaking your code →
                 </button>
@@ -418,11 +520,11 @@ export default function App() {
               <div className="flex flex-col gap-4">
                 {/* Panel header */}
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-text-muted">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-text-muted font-label">
                     Issues
                   </p>
                   <span
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-full font-label"
                     style={{
                       color: "#fb7185",
                       background: "rgba(244,63,94,0.12)",
@@ -446,7 +548,6 @@ export default function App() {
                         onLineClick={() => {
                           setActiveIdx(err.flatIndex);
                           activeIdxRef.current = err.flatIndex;
-                          scrollToLine(err.line);
                         }}
                       />
                     ))}
@@ -460,16 +561,21 @@ export default function App() {
 
       {/* ── Floating Console ─────────────────────────────────────────── */}
       <div
-        className="fixed bottom-0 right-0 z-50 overflow-hidden flex flex-col transition-all duration-300 ease-in-out"
+        className="fixed bottom-0 right-0 z-50 overflow-hidden flex flex-col"
         style={{
-          width: "480px",
+          width: isLargeScreen ? "480px" : "calc(100% - 32px)",
+          right: isLargeScreen ? "0px" : "16px",
+          left: isLargeScreen ? "auto" : "16px",
           height: consoleOpen ? 190 : 0,
           background: "rgba(4, 8, 20, 0.95)",
           backdropFilter: "blur(20px)",
           borderTop: "1px solid rgba(99,102,241,0.15)",
-          borderLeft: "1px solid rgba(99,102,241,0.15)",
-          borderRadius: "16px 0 0 0",
+          borderLeft: isLargeScreen ? "1px solid rgba(99,102,241,0.15)" : "none",
+          borderRight: isLargeScreen ? "none" : "1px solid rgba(99,102,241,0.15)",
+          borderRadius: isLargeScreen ? "16px 0 0 0" : "16px 16px 0 0",
           boxShadow: "0 -8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,102,241,0.08)",
+          visibility: consoleOpen ? "visible" : "hidden", // Completely eliminates closed borders
+          transition: "all 300ms cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
         <div
@@ -500,11 +606,13 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── Console FAB ──────────────────────────────────────────────── */}
+      {/* ── Console FAB (Smooth gliding anims based on console state) ── */}
       <button
         onClick={() => setConsoleOpen(v => !v)}
-        className="fixed bottom-5 right-5 z-50 flex items-center gap-2 font-mono text-[11px] px-4 py-2 rounded-full transition-all duration-200"
+        className="fixed z-50 flex items-center gap-2 font-mono text-[11px] px-4 py-2 rounded-full transition-all duration-300"
         style={{
+          bottom: consoleOpen ? "210px" : "20px", // Seamless glide above open console
+          right: isLargeScreen ? "20px" : "32px",
           background: "rgba(8,13,30,0.9)",
           backdropFilter: "blur(12px)",
           border: "1px solid rgba(99,102,241,0.2)",
