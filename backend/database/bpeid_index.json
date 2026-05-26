@@ -1,0 +1,205 @@
+{
+  "ACQR-PY-0001": {
+    "error_id": "ACQR-PY-0001",
+    "category": "syntax_missing_colon",
+    "tags": ["syntax", "indentation", "block-structures"],
+    "signature": {
+      "source": "heuristic",
+      "match_keys": ["expected ':'", "missing ':'"],
+      "regex_pattern": "expected ':'"
+    },
+    "mental_model": {
+      "analogy_title": "The Security Guard's Stamp",
+      "analogy_body": "An 'if', 'for', 'while', or 'def' is like a gatekeeper standing at a restricted area. The colon (:) is the stamp showing the gatekeeper that you are opening a new compound. Without the stamp, Python is lost and doesn't know where to look next.",
+      "visual_ascii": "if condition -> [:] -> [ INDENTED CODE BODY ]\n                 ^ Missing! (Gate is locked)"
+    },
+    "explanation": {
+      "eli5": "You forgot to add a colon ':' at the end of a header line (like an if-statement, a for-loop, or a function definition). In Python, a colon is mandatory to open a new indented block.",
+      "why_it_happened": "Python's syntax parser reads the keyword (e.g. 'if') and expects a colon to mark the end of the condition and the start of the nested suite of code. Without it, it raises a SyntaxError.",
+      "how_to_avoid": "Always remember to add a ':' at the end of any line starting with 'if', 'elif', 'else', 'for', 'while', 'def', 'class', 'with', or 'try'."
+    },
+    "remediation": {
+      "bad_code": "if age > 18\n    print(\"Eligible\")",
+      "good_code": "if age > 18:\n    print(\"Eligible\")",
+      "interactive_scaffolding": [
+        "Find the line where Python complained about a missing colon.",
+        "Verify if it has an 'if', 'for', 'while', 'def', or 'else' on it.",
+        "Append a ':' at the very end of that line, right after the expression."
+      ]
+    }
+  },
+  "ACQR-PY-0002": {
+    "error_id": "ACQR-PY-0002",
+    "category": "syntax_unterminated_string",
+    "tags": ["syntax", "strings", "quotes"],
+    "signature": {
+      "source": "heuristic",
+      "match_keys": ["unterminated string", "EOL while scanning string literal"],
+      "regex_pattern": "unterminated string|scanning string literal"
+    },
+    "mental_model": {
+      "analogy_title": "The Opened & Unclosed Safe",
+      "analogy_body": "A string quote (' or \") is like opening a safe. Everything inside is treated as text (valuables) rather than code commands. If you don't close the safe, Python wanders into it and treats the rest of your computer instructions as plain text, leading to a crash.",
+      "visual_ascii": "x = \"Hello World     <--- Safe remains open!\n     ^ Opened         ^ (Missing closing \")"
+    },
+    "explanation": {
+      "eli5": "You started a text string with a quote mark (' or \") but forgot to put the matching quote mark at the end of the text on that line.",
+      "why_it_happened": "Python reads a quote and turns on a 'text mode' scanner. It keeps reading everything on the line as literal text until it sees a matching quote. If it reaches the End Of Line (EOL) without seeing the match, it raises an error.",
+      "how_to_avoid": "Double-check your strings to ensure every single opening quote has a matching closing quote on the same line (or use triple quotes \"\"\" for multi-line text)."
+    },
+    "remediation": {
+      "bad_code": "message = \"Welcome to ACQR\nprint(message)",
+      "good_code": "message = \"Welcome to ACQR\"\nprint(message)",
+      "interactive_scaffolding": [
+        "Locate the highlighted line with the unclosed string.",
+        "Count the quotes on that line. You should have an even number (usually two).",
+        "Add the missing matching quote (' or \") at the end of your string literal."
+      ]
+    }
+  },
+  "ACQR-PY-0003": {
+    "error_id": "ACQR-PY-0003",
+    "category": "syntax_unclosed_bracket",
+    "tags": ["syntax", "parentheses", "brackets", "math"],
+    "signature": {
+      "source": "heuristic",
+      "match_keys": ["was never closed", "unmatched", "unexpected EOF while parsing"],
+      "regex_pattern": "was never closed|unmatched|unexpected EOF"
+    },
+    "mental_model": {
+      "analogy_title": "The Unpaired Hands",
+      "analogy_body": "Parentheses and brackets are like pairs of hands clapping. A left hand '(' always needs a matching right hand ')' to make a clap. If a hand is left waving in the air without a partner, Python gets confused about where a calculation or print statement ends.",
+      "visual_ascii": "print( len(my_list)   <--- 2 open '(' but only 1 close ')'!\n     ^    ^       ^   \n     1    2       2.1 (Missing the partner for 1!)"
+    },
+    "explanation": {
+      "eli5": "You opened a parenthesis '(', bracket '[', or brace '{' but forgot to close it with its matching partner ')', ']', or '}'.",
+      "why_it_happened": "Python keeps track of nesting depths using a stack. Every opening character increases the stack, and every closing character decreases it. If the program ends or a block finishes while the stack is non-zero, Python raises an error.",
+      "how_to_avoid": "Whenever you type an opening parenthesis, immediately type the closing one before filling in the contents. Count them to ensure they balance out."
+    },
+    "remediation": {
+      "bad_code": "print(sum([1, 2, 3])",
+      "good_code": "print(sum([1, 2, 3]))",
+      "interactive_scaffolding": [
+        "Count how many opening parentheses '(' are on the line.",
+        "Count how many closing parentheses ')' are on the line.",
+        "Add the missing closing character at the correct ending position."
+      ]
+    }
+  },
+  "ACQR-PY-0004": {
+    "error_id": "ACQR-PY-0004",
+    "category": "logical_mutable_default",
+    "tags": ["functions", "lists", "mutability", "memory-references"],
+    "signature": {
+      "source": "heuristic",
+      "match_keys": ["W0102", "mutable-default-argument"],
+      "regex_pattern": "mutable default argument"
+    },
+    "mental_model": {
+      "analogy_title": "The Shared Clipboard",
+      "analogy_body": "Imagine a teacher gives every student a clipboard to write their answers. If the teacher hands out the exact same wooden clipboard block to everyone, writing on your board changes it for the next person. Instead, each student should request a blank sheet of paper when they start writing.",
+      "visual_ascii": "[ Shared List ] <--- User 1 (Appends 'x')\n[ Shared List ] <--- User 2 (Sees ['x'] instead of empty!)"
+    },
+    "explanation": {
+      "eli5": "You defined a function parameter with a default value of a mutable object (like a list `[]`). In Python, default arguments are only built once when the program starts, not every time you run the function.",
+      "why_it_happened": "Python creates default arguments during definition time. The list object `[]` is stored in the function's metadata. If you append items to this list inside the function, future calls to the function will reuse that exact same list in memory.",
+      "how_to_avoid": "Use `None` as the default value, and check if the parameter is `None` inside the function, assigning a fresh list (`[]`) there."
+    },
+    "remediation": {
+      "bad_code": "def add_to_cart(item, cart=[]):\n    cart.append(item)\n    return cart",
+      "good_code": "def add_to_cart(item, cart=None):\n    if cart is None:\n        cart = []\n    cart.append(item)\n    return cart",
+      "interactive_scaffolding": [
+        "Look closely at `cart=[]` in the arguments. This list gets shared across all function calls.",
+        "Try changing `cart=[]` to `cart=None`.",
+        "Inside the function, add: `if cart is None: cart = []` to construct a brand new list."
+      ]
+    }
+  },
+  "ACQR-PY-0012": {
+    "error_id": "ACQR-PY-0012",
+    "category": "semantic_shadowing",
+    "tags": ["variables", "scope", "builtins"],
+    "signature": {
+      "source": "heuristic",
+      "match_keys": ["shadows-builtin", "W0622", "Shadows built-in name"],
+      "regex_pattern": "shadows built-in"
+    },
+    "mental_model": {
+      "analogy_title": "Redefining the Dictionary",
+      "analogy_body": "Imagine taking a dictionary, crossing out the word 'sum', and writing '5' over it. Later, if you try to look up how to perform a sum calculation, you can't, because 'sum' now just means the number 5. You have broken that word's default meaning in your scope.",
+      "visual_ascii": "Default Python:  sum([1, 2]) -> 3\nAfter Shadowing:  sum = 5\nNext Attempt:    sum([1, 2]) -> Crash! (int object not callable)"
+    },
+    "explanation": {
+      "eli5": "You created a variable named after a built-in Python function (like `list`, `str`, `sum`, or `dict`). This overrides the built-in function, meaning you can't use it for its original purpose anymore.",
+      "why_it_happened": "Python checks variable names in order: Local -> Enclosing -> Global -> Builtins. By assigning a value to `list = [1, 2]`, the variable `list` is found in your local/global scope. If you try to run `list('abc')` later, Python attempts to call your list variable as a function, causing a TypeError.",
+      "how_to_avoid": "Avoid naming your variables after keywords or built-ins. Add a descriptive word, like `user_list` or `scores`."
+    },
+    "remediation": {
+      "bad_code": "list = [10, 20, 30]\nprint(list)\nnames = list('bob')",
+      "good_code": "numbers = [10, 20, 30]\nprint(numbers)\nnames = list('bob')",
+      "interactive_scaffolding": [
+        "You are using the name `list` for your variable on line 1.",
+        "Because `list()` is a built-in Python helper, naming your variable `list` blocks Python from using that helper on line 3.",
+        "Rename your variable `list` to something distinct, like `numbers` or `my_list`."
+      ]
+    }
+  },
+  "ACQR-PY-0021": {
+    "error_id": "ACQR-PY-0021",
+    "category": "runtime_division_by_zero",
+    "tags": ["math", "division", "crash"],
+    "signature": {
+      "source": "heuristic",
+      "match_keys": ["ZeroDivisionError", "division by zero", "unsafe division"],
+      "regex_pattern": "division by zero|unsafe division"
+    },
+    "mental_model": {
+      "analogy_title": "The Black Hole Divide",
+      "analogy_body": "Dividing slices of pizza among friends is easy. Sharing 8 slices among 2 friends means 4 each. Sharing 8 slices among 0 friends is an impossible logical paradox. Python doesn't know how to handle this mathematical black hole and immediately crashes the entire computer program.",
+      "visual_ascii": "Result = 10 / divisor\nIf divisor == 0:  [ CRASH ! ]"
+    },
+    "explanation": {
+      "eli5": "You are dividing a number by zero or a variable that can become zero. In mathematics and computer science, dividing by zero is undefined and causes a program crash.",
+      "why_it_happened": "Python encounters the division operator `/` and evaluates the denominator. If the denominator is `0`, it cannot produce a numerical output, so it raises a `ZeroDivisionError` which stops program execution.",
+      "how_to_avoid": "Always check if your divisor is zero using an `if` statement *before* doing the division."
+    },
+    "remediation": {
+      "bad_code": "average = total / count",
+      "good_code": "if count == 0:\n    average = 0\nelse:\n    average = total / count",
+      "interactive_scaffolding": [
+        "Identify your denominator (the value you are dividing by).",
+        "Add a safety check check: `if denominator == 0:` to handle the zero case gracefully.",
+        "Place your division code inside the `else:` block."
+      ]
+    }
+  },
+  "ACQR-PY-0030": {
+    "error_id": "ACQR-PY-0030",
+    "category": "syntax_javascript_operators",
+    "tags": ["syntax", "javascript-vs-python", "operators"],
+    "signature": {
+      "source": "heuristic",
+      "match_keys": ["JavaScript syntax", "Invalid operator '==='", "Invalid operator '!=='"],
+      "regex_pattern": "===|!=="
+    },
+    "mental_model": {
+      "analogy_title": "Speaking the Wrong Dialect",
+      "analogy_body": "Imagine going to France and asking for directions using Spanish words. The locals will be confused. In JavaScript, three equal signs (===) checks both value and type. In Python, however, '===' is gibberish. Python uses two equal signs (==) to check equality.",
+      "visual_ascii": "JS Syntax:     if x === 5:  [ ERROR ]\nPython Syntax: if x == 5:   [ MATCH ]"
+    },
+    "explanation": {
+      "eli5": "You are using JavaScript-style operators like `===` or `!==` in your Python code. Python does not support these triple-operators and throws a syntax error.",
+      "why_it_happened": "Python's lexical scanner splits code into tokens. It recognizes `==` as an equality token and `=` as an assignment token. But it has no rule for `===`, making it syntactically invalid.",
+      "how_to_avoid": "Always use single equals `=` for assigning values, and double equals `==` or `!=` for comparing values in Python."
+    },
+    "remediation": {
+      "bad_code": "if score === 100:\n    print(\"Perfect score!\")",
+      "good_code": "if score == 100:\n    print(\"Perfect score!\")",
+      "interactive_scaffolding": [
+        "Look for `===` or `!==` in your expression.",
+        "Change `===` to `==` for Python equality.",
+        "Change `!==` to `!=` for Python inequality."
+      ]
+    }
+  }
+}

@@ -164,11 +164,96 @@ export default function IssueCard({ err, onApplyFix, onRemoveIssue, onLineClick,
       {/* ── Collapsible "Why?" ─────────────────────────────────────────── */}
       {learnOpen && (
         <div
-          className="relative border-t border-white/5 px-5 pt-4 pb-5 flex flex-col gap-4 animate-fade-in"
+          className="relative border-t border-white/5 px-5 pt-4 pb-5 flex flex-col gap-5 animate-fade-in"
           onClick={e => e.stopPropagation()}
           style={{ background: "rgba(0,0,0,0.2)" }}
         >
-          {suggestion && (
+          {/* Segment 1: The ELI5 Explanation */}
+          {err.explanation && (
+            <div>
+              <p className="text-[10px] font-bold text-[#a2a1a8] uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                <span>🗣️</span> ELI5 Explanation
+              </p>
+              <p className="text-[13px] text-slate-300 leading-relaxed font-normal">
+                {err.explanation}
+              </p>
+            </div>
+          )}
+
+          {/* Segment 2: Mental Model (Analogy + ASCII) */}
+          {err.mental_model && (
+            <div className="rounded-xl border border-white/5 p-4 bg-white/[0.02] backdrop-blur-md">
+              <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                <span>🧠</span> Mental Model: {err.mental_model.analogy_title}
+              </p>
+              <p className="text-[13px] text-slate-300 leading-relaxed mb-3 italic">
+                "{err.mental_model.analogy_body}"
+              </p>
+              {err.mental_model.visual_ascii && (
+                <div className="relative rounded-lg overflow-x-auto bg-black/40 border border-white/5 p-3.5">
+                  <pre className="text-[11px] font-mono text-emerald-400 leading-relaxed whitespace-pre font-semibold">
+                    {err.mental_model.visual_ascii}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Segment 3: Interactive Scaffolding Clues */}
+          {err.remediation?.interactive_scaffolding && (
+            <div className="mt-1">
+              <p className="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5">
+                <span>🛠️</span> Interactive Clues
+              </p>
+              <div className="flex flex-col gap-2.5">
+                {err.remediation.interactive_scaffolding.map((step, sIdx) => {
+                  return (
+                    <label
+                      key={sIdx}
+                      className="flex items-start gap-3 cursor-pointer group text-[13px] text-slate-300 hover:text-white transition-colors duration-150"
+                    >
+                      <input
+                        type="checkbox"
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-0.5 w-4 h-4 rounded border-white/10 bg-slate-800 focus:ring-0 cursor-pointer"
+                      />
+                      <span className="leading-snug select-none group-hover:translate-x-0.5 transition-transform duration-200">
+                        {step}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Segment 4: Before / After Diffs */}
+          {err.remediation?.bad_code && err.remediation?.good_code && (
+            <div className="mt-1">
+              <p className="text-[10px] font-bold text-teal-400 uppercase tracking-widest mb-2">
+                ⚡ Code Comparison
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Bad Code */}
+                <div className="rounded-lg bg-[#ff453a]/5 border border-[#ff453a]/20 p-3">
+                  <p className="text-[10px] font-bold text-[#ff453a] uppercase tracking-wider mb-1.5">Needs Fix</p>
+                  <pre className="text-[11px] font-mono text-slate-200 whitespace-pre overflow-x-auto leading-relaxed">
+                    {err.remediation.bad_code}
+                  </pre>
+                </div>
+                {/* Good Code */}
+                <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/20 p-3">
+                  <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-1.5">Correct Approach</p>
+                  <pre className="text-[11px] font-mono text-slate-200 whitespace-pre overflow-x-auto leading-relaxed">
+                    {err.remediation.good_code}
+                  </pre>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Fallback to simple suggestion when rich BPEID is absent */}
+          {!err.mental_model && suggestion && (
             <div>
               <p className="text-[10px] font-bold text-[#5e5ce6] uppercase tracking-widest mb-1.5">
                 The Fix
@@ -176,7 +261,8 @@ export default function IssueCard({ err, onApplyFix, onRemoveIssue, onLineClick,
               <p className="text-[13px] text-slate-300 leading-relaxed font-medium">{suggestion}</p>
             </div>
           )}
-          {fullExp && (
+
+          {!err.mental_model && fullExp && (
             <div>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
                 The Details

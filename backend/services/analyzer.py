@@ -8,6 +8,7 @@ from typing import List, Dict, Any
 from services.ai_explainer import generate_llm_insights
 from services.intent_engine import detect_intent_mismatch
 from services.feedback_engine import adjust_confidence
+from services.retriever import find_bpeid_record
 
 # ---------------------------------------------------------------------------
 # Pylint runner
@@ -708,7 +709,11 @@ def analyze_code(code: str) -> Dict[str, List[Dict[str, Any]]]:
                 fix = validated
                 if repaired_sugg:
                     issue["suggestion"] = repaired_sugg
-            final.append({
+
+            # Look up BPEID records for Layer 1 syntax errors
+            bpeid_rec = find_bpeid_record(None, raw_msg)
+
+            err_item = {
                 "issue_key"        : issue_key,
                 "line"             : issue.get("line"),
                 "error"            : raw_msg,
@@ -721,7 +726,18 @@ def analyze_code(code: str) -> Dict[str, List[Dict[str, Any]]]:
                 "root_cause"       : issue.get("root_cause"),
                 "severity"         : issue.get("severity"),
                 "confidence"       : issue.get("confidence"),
-            })
+            }
+
+            if bpeid_rec:
+                err_item["mental_model"] = bpeid_rec.get("mental_model")
+                err_item["remediation"] = bpeid_rec.get("remediation")
+                if bpeid_rec.get("explanation"):
+                    eli5 = bpeid_rec["explanation"].get("eli5")
+                    if eli5:
+                        err_item["explanation"] = eli5
+                        err_item["short_explanation"] = eli5
+
+            final.append(err_item)
         return {"errors": final}
 
     # ═══════════════════════════════════════════════════════════════════════════
@@ -862,7 +878,7 @@ def analyze_code(code: str) -> Dict[str, List[Dict[str, Any]]]:
     # 6. Final Output Formatting (Maintaining Frontend Compatibility)
     errors_list = []
     for issue in merged_map.values():
-        raw_msg = issue.get("message")
+        raw_msg = issue.get("message") or ""
         issue_key = f"{issue.get('type')}:{normalize(raw_msg)}"
         
         base_conf = issue.get("confidence")
@@ -881,9 +897,16 @@ def analyze_code(code: str) -> Dict[str, List[Dict[str, Any]]]:
                 fix = None
         
         full_explanation = issue.get("explanation") or ""
-        short_expl = make_short_explanation(full_explanation, issue.get("type", ""), raw_msg or "")
+        short_expl = make_short_explanation(full_explanation, issue.get("type", ""), raw_msg)
 
-        errors_list.append({
+        # Retrieve linter message-id if it came from static pylint
+        raw_err = issue.get("raw_err", {})
+        message_id = raw_err.get("message-id") if raw_err else None
+        
+        # BPEID matching
+        bpeid_rec = find_bpeid_record(message_id, raw_msg)
+
+        err_item = {
             "issue_key": issue_key,
             "line": issue.get("line"),
             "error": raw_msg,  # Frontend expects "error"
@@ -896,7 +919,19 @@ def analyze_code(code: str) -> Dict[str, List[Dict[str, Any]]]:
             "root_cause": issue.get("root_cause"),
             "severity": issue.get("severity"),
             "confidence": adjusted_conf
-        })
+        }
+
+        # Inject BPEID details
+        if bpeid_rec:
+            err_item["mental_model"] = bpeid_rec.get("mental_model")
+            err_item["remediation"] = bpeid_rec.get("remediation")
+            if bpeid_rec.get("explanation"):
+                eli5 = bpeid_rec["explanation"].get("eli5")
+                if eli5:
+                    err_item["explanation"] = eli5
+                    err_item["short_explanation"] = eli5
+
+        errors_list.append(err_item)
 
     # 7. Safety Rule: if all sources empty and AI was unavailable
     if not errors_list and not ai_insight:

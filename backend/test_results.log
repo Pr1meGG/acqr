@@ -1,20 +1,19 @@
 ACQR FAST TEST RESULTS (deterministic pipeline)
-Run at: 2026-05-01T13:04:50.696284
+Run at: 2026-05-26T18:14:09.216011
 
 ════════════════════════════════════════════════════════════════════════
-  ACQR TEST SUMMARY  —  2026-05-01 13:04:50
+  ACQR TEST SUMMARY  —  2026-05-26 18:14:09
 ════════════════════════════════════════════════════════════════════════
   Total test cases  : 100
-  Cases with issues : 15
-  Clean cases       : 85
-  Total issues      : 17
-  Issues with a fix : 5
+  Cases with issues : 77
+  Clean cases       : 23
+  Total issues      : 81
+  Issues with a fix : 14
 ────────────────────────────────────────────────────────────────────────
   BY TYPE:
-    lint             11
-    runtime           3
-    logical           2
-    syntax            1
+    syntax           63
+    lint             17
+    runtime           1
 ════════════════════════════════════════════════════════════════════════
 
 DETAILED RESULTS
@@ -27,7 +26,13 @@ DETAILED RESULTS
     if x > 5
     print(x)
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✔ fix]
+         expected ':'
+         → Python cannot parse this line: expected ':'
+         💡 Add ':' at the end of the statement to open the block.
+         🔧 replace line 1 → 'if x > 5:'
 
 ════════════════════════════════════════════════════════════════════════
   TEST   2
@@ -36,7 +41,13 @@ DETAILED RESULTS
   CODE:
     print("hello"
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✔ fix]
+         '(' was never closed
+         → Python cannot parse this line: '(' was never closed
+         💡 Balance the opening bracket/parenthesis with a matching closing one.
+         🔧 replace line 1 → 'print("hello")'
 
 ════════════════════════════════════════════════════════════════════════
   TEST   3
@@ -46,7 +57,13 @@ DETAILED RESULTS
     def func(
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✔ fix]
+         '(' was never closed
+         → Python cannot parse this line: '(' was never closed
+         💡 Balance the opening bracket/parenthesis with a matching closing one.
+         🔧 replace line 1 → 'def func()'
 
 ════════════════════════════════════════════════════════════════════════
   TEST   4
@@ -56,7 +73,13 @@ DETAILED RESULTS
     for i in range(10)
     print(i)
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✔ fix]
+         expected ':'
+         → Python cannot parse this line: expected ':'
+         💡 Add ':' at the end of the statement to open the block.
+         🔧 replace line 1 → 'for i in range(10):'
 
 ════════════════════════════════════════════════════════════════════════
   TEST   5
@@ -65,7 +88,12 @@ DETAILED RESULTS
   CODE:
     x =
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         invalid syntax
+         → Python cannot parse this line: invalid syntax
+         💡 Review the line for typos or missing characters.
 
 ════════════════════════════════════════════════════════════════════════
   TEST   6
@@ -75,7 +103,11 @@ DETAILED RESULTS
     if True:
     print("hi")
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST   7
@@ -86,10 +118,10 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=1  type=syntax  sev=high  src=['heuristic']  [✔ fix]
-         Unterminated string literal
-         → A string starting with "'" on this line is never closed.
-         💡 Add closing "'" to complete the string
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✔ fix]
+         unterminated string literal (detected at line 1)
+         → Python cannot parse this line: unterminated string literal (detected at line 1)
+         💡 Close the string with a matching quote character.
          🔧 replace line 1 → 'print(\'hello"\')'
 
 ════════════════════════════════════════════════════════════════════════
@@ -100,7 +132,12 @@ DETAILED RESULTS
     if x == 10::
     print(x)
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         invalid syntax
+         → Python cannot parse this line: invalid syntax
+         💡 Review the line for typos or missing characters.
 
 ════════════════════════════════════════════════════════════════════════
   TEST   9
@@ -112,11 +149,11 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=1  type=runtime  sev=medium  src=['heuristic']  [✔ fix]
-         Possible infinite loop
-         → A 'while True' loop was found. Ensure there is a 'break' condition.
-         💡 Add a break statement to prevent the loop from running forever.
-         🔧 L1→1 = 'while True\n    # TODO: add exit condition\n    break'
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✔ fix]
+         expected ':'
+         → Python cannot parse this line: expected ':'
+         💡 Add ':' at the end of the statement to open the block.
+         🔧 replace line 1 → 'while True:'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  10
@@ -126,7 +163,11 @@ DETAILED RESULTS
     def func():
     return 5
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after function definition on line 1
+         → Python cannot parse this line: expected an indented block after function definition on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  11
@@ -135,7 +176,12 @@ DETAILED RESULTS
   CODE:
     x === 5
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         invalid syntax
+         → Python cannot parse this line: invalid syntax
+         💡 Review the line for typos or missing characters.
 
 ════════════════════════════════════════════════════════════════════════
   TEST  12
@@ -145,7 +191,12 @@ DETAILED RESULTS
     if (x > 5:
     print(x)
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         invalid syntax
+         → Python cannot parse this line: invalid syntax
+         💡 Review the line for typos or missing characters.
 
 ════════════════════════════════════════════════════════════════════════
   TEST  13
@@ -154,7 +205,13 @@ DETAILED RESULTS
   CODE:
     [1, 2, 3
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✔ fix]
+         '[' was never closed
+         → Python cannot parse this line: '[' was never closed
+         💡 Balance the opening bracket/parenthesis with a matching closing one.
+         🔧 replace line 1 → '[1, 2, 3]'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  14
@@ -163,7 +220,13 @@ DETAILED RESULTS
   CODE:
     { "a": 1,
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✔ fix]
+         '{' was never closed
+         → Python cannot parse this line: '{' was never closed
+         💡 Balance the opening bracket/parenthesis with a matching closing one.
+         🔧 replace line 1 → '{ "a": 1,}'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  15
@@ -173,7 +236,13 @@ DETAILED RESULTS
     class A(
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✔ fix]
+         '(' was never closed
+         → Python cannot parse this line: '(' was never closed
+         💡 Balance the opening bracket/parenthesis with a matching closing one.
+         🔧 replace line 1 → 'class A()'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  16
@@ -183,7 +252,12 @@ DETAILED RESULTS
     def f(x y):
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         invalid syntax
+         → Python cannot parse this line: invalid syntax
+         💡 Review the line for typos or missing characters.
 
 ════════════════════════════════════════════════════════════════════════
   TEST  17
@@ -192,7 +266,10 @@ DETAILED RESULTS
   CODE:
     print(Hello)
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=lint  sev=?  src=['static']  [✘ no fix]
+         Undefined variable 'Hello'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  18
@@ -202,7 +279,13 @@ DETAILED RESULTS
     if x > 5
     print(x)
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✔ fix]
+         expected ':'
+         → Python cannot parse this line: expected ':'
+         💡 Add ':' at the end of the statement to open the block.
+         🔧 replace line 1 → 'if x > 5:'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  19
@@ -213,7 +296,17 @@ DETAILED RESULTS
     x=1
     except
 
-  ✅  No issues detected
+  🔍  2 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'try' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'try' statement on line 1
+
+  [2]  line=3  type=syntax  sev=high  src=['heuristic']  [✔ fix]
+         Missing ':' after 'except' statement
+         → The 'except' statement needs a ':' to open its body.
+         💡 Add ':' at the end of line 3.
+         🔧 replace line 3 → 'except:'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  20
@@ -222,7 +315,12 @@ DETAILED RESULTS
   CODE:
     lambda x: x+
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         invalid syntax
+         → Python cannot parse this line: invalid syntax
+         💡 Review the line for typos or missing characters.
 
 ════════════════════════════════════════════════════════════════════════
   TEST  21
@@ -246,7 +344,12 @@ DETAILED RESULTS
     if x > 5::
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         invalid syntax
+         → Python cannot parse this line: invalid syntax
+         💡 Review the line for typos or missing characters.
 
 ════════════════════════════════════════════════════════════════════════
   TEST  23
@@ -257,7 +360,11 @@ DETAILED RESULTS
     if True
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after function definition on line 1
+         → Python cannot parse this line: expected an indented block after function definition on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  24
@@ -267,7 +374,12 @@ DETAILED RESULTS
     with open("file.txt" as f):
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         invalid syntax
+         → Python cannot parse this line: invalid syntax
+         💡 Review the line for typos or missing characters.
 
 ════════════════════════════════════════════════════════════════════════
   TEST  25
@@ -287,7 +399,11 @@ DETAILED RESULTS
     if x > 5:
     print("always true inner")
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  27
@@ -297,7 +413,11 @@ DETAILED RESULTS
     if x == x:
     print("always true")
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  28
@@ -307,7 +427,11 @@ DETAILED RESULTS
     if False:
     print("never runs")
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  29
@@ -320,11 +444,9 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=1  type=runtime  sev=medium  src=['heuristic']  [✔ fix]
-         Possible infinite loop
-         → A 'while True' loop was found. Ensure there is a 'break' condition.
-         💡 Add a break statement to prevent the loop from running forever.
-         🔧 L1→1 = 'while True:\n    # TODO: add exit condition\n    break'
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'while' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'while' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  30
@@ -335,7 +457,11 @@ DETAILED RESULTS
     return 1
     print("dead code")
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after function definition on line 1
+         → Python cannot parse this line: expected an indented block after function definition on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  31
@@ -345,7 +471,11 @@ DETAILED RESULTS
     if x > 5 and x < 3:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  32
@@ -355,7 +485,11 @@ DETAILED RESULTS
     if x != x:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  33
@@ -365,7 +499,11 @@ DETAILED RESULTS
     for i in range(0):
     print(i)
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'for' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'for' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  34
@@ -375,7 +513,11 @@ DETAILED RESULTS
     if True or False:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  35
@@ -388,7 +530,11 @@ DETAILED RESULTS
     if x > 5:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  36
@@ -401,7 +547,11 @@ DETAILED RESULTS
     if x == 5:
     print("never")
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=3  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 2
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 2
 
 ════════════════════════════════════════════════════════════════════════
   TEST  37
@@ -413,7 +563,11 @@ DETAILED RESULTS
     if x > 5:
     x = 20
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  38
@@ -423,7 +577,11 @@ DETAILED RESULTS
     while False:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'while' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'while' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  39
@@ -434,7 +592,11 @@ DETAILED RESULTS
     if False:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  40
@@ -446,7 +608,11 @@ DETAILED RESULTS
     elif x > 5:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  41
@@ -457,7 +623,11 @@ DETAILED RESULTS
     if x:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=3  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 2
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 2
 
 ════════════════════════════════════════════════════════════════════════
   TEST  42
@@ -467,7 +637,11 @@ DETAILED RESULTS
     if x > 5:
     x = 5
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  43
@@ -477,7 +651,11 @@ DETAILED RESULTS
     if x == None:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  44
@@ -487,7 +665,11 @@ DETAILED RESULTS
     if not not True:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  45
@@ -498,7 +680,11 @@ DETAILED RESULTS
     if x:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=3  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 2
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 2
 
 ════════════════════════════════════════════════════════════════════════
   TEST  46
@@ -508,7 +694,11 @@ DETAILED RESULTS
     if 1:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  47
@@ -518,7 +708,11 @@ DETAILED RESULTS
     if "":
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  48
@@ -528,7 +722,11 @@ DETAILED RESULTS
     if x and x:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  49
@@ -538,7 +736,11 @@ DETAILED RESULTS
     if x or x:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  50
@@ -550,7 +752,11 @@ DETAILED RESULTS
     elif x > 3:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  51
@@ -579,7 +785,10 @@ DETAILED RESULTS
   CODE:
     print(undefined_var)
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=lint  sev=?  src=['static']  [✘ no fix]
+         Undefined variable 'undefined_var'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  53
@@ -626,7 +835,10 @@ DETAILED RESULTS
   CODE:
     import notamodule
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=lint  sev=?  src=['static']  [✘ no fix]
+         Unable to import 'notamodule'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  58
@@ -673,7 +885,11 @@ DETAILED RESULTS
     for i in 10:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'for' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'for' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  63
@@ -683,7 +899,11 @@ DETAILED RESULTS
     def f():
     return x
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after function definition on line 1
+         → Python cannot parse this line: expected an indented block after function definition on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  64
@@ -706,7 +926,10 @@ DETAILED RESULTS
   CODE:
     del x
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=lint  sev=?  src=['static']  [✘ no fix]
+         Undefined variable 'x'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  66
@@ -716,7 +939,13 @@ DETAILED RESULTS
     print(x)
     del x
 
-  ✅  No issues detected
+  🔍  2 issue(s):
+
+  [1]  line=1  type=lint  sev=?  src=['static']  [✘ no fix]
+         Undefined variable 'x'
+
+  [2]  line=2  type=lint  sev=?  src=['static']  [✘ no fix]
+         Undefined variable 'x'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  67
@@ -782,7 +1011,11 @@ DETAILED RESULTS
     def func( ):
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after function definition on line 1
+         → Python cannot parse this line: expected an indented block after function definition on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  73
@@ -792,7 +1025,11 @@ DETAILED RESULTS
     def FUNC():
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after function definition on line 1
+         → Python cannot parse this line: expected an indented block after function definition on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  74
@@ -822,7 +1059,11 @@ DETAILED RESULTS
     def func(x,x):
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after function definition on line 1
+         → Python cannot parse this line: expected an indented block after function definition on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  76
@@ -832,7 +1073,11 @@ DETAILED RESULTS
     if(x>5):
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  77
@@ -885,7 +1130,11 @@ DETAILED RESULTS
     a=1
     b=2
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after function definition on line 1
+         → Python cannot parse this line: expected an indented block after function definition on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  82
@@ -897,7 +1146,11 @@ DETAILED RESULTS
     else:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'if' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'if' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  83
@@ -922,7 +1175,11 @@ DETAILED RESULTS
     return
     x = 5
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after function definition on line 1
+         → Python cannot parse this line: expected an indented block after function definition on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  85
@@ -932,7 +1189,11 @@ DETAILED RESULTS
     class a:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after class definition on line 1
+         → Python cannot parse this line: expected an indented block after class definition on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  86
@@ -968,7 +1229,13 @@ DETAILED RESULTS
   CODE:
     if True: pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=1  type=syntax  sev=high  src=['heuristic']  [✔ fix]
+         Missing ':' after 'if' statement
+         → The 'if' statement needs a ':' to open its body.
+         💡 Add ':' at the end of line 1.
+         🔧 replace line 1 → 'if True: pass:'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  90
@@ -988,10 +1255,11 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=1  type=logical  sev=medium  src=['heuristic']  [✘ no fix]
-         Missing return in 'f'
-         → The function 'f' has no return value.
-         💡 Ensure the function returns a value if expected.
+  [1]  line=1  type=syntax  sev=high  src=['heuristic']  [✔ fix]
+         Missing ':' after 'def' statement
+         → The 'def' statement needs a ':' to open its body.
+         💡 Add ':' at the end of line 1.
+         🔧 replace line 1 → 'def f(): ...:'
 
 ════════════════════════════════════════════════════════════════════════
   TEST  92
@@ -1026,11 +1294,9 @@ DETAILED RESULTS
 
   🔍  1 issue(s):
 
-  [1]  line=1  type=logical  sev=medium  src=['heuristic']  [✔ fix]
-         Mutable default argument
-         → Using a mutable default argument like `[]` causes the same list to be shared across function calls.
-         💡 Replace `[]` with `None` and initialize it inside the function.
-         🔧 L1→1 = 'def f(x= None):'
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after function definition on line 1
+         → Python cannot parse this line: expected an indented block after function definition on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  95
@@ -1040,7 +1306,11 @@ DETAILED RESULTS
     def f():
     global x
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after function definition on line 1
+         → Python cannot parse this line: expected an indented block after function definition on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  96
@@ -1052,7 +1322,11 @@ DETAILED RESULTS
     finally:
     pass
 
-  ✅  No issues detected
+  🔍  1 issue(s):
+
+  [1]  line=2  type=syntax  sev=high  src=['ast']  [✘ no fix]
+         expected an indented block after 'try' statement on line 1
+         → Python cannot parse this line: expected an indented block after 'try' statement on line 1
 
 ════════════════════════════════════════════════════════════════════════
   TEST  97
