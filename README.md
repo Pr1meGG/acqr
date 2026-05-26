@@ -46,7 +46,7 @@ ACQR takes a different approach: **explain the error, teach the concept, guide t
 **Analysis Engine**
 - **Deterministic auto-fix pipeline** — safe, unambiguous syntax errors (missing colons, unclosed strings, mismatched brackets) get a one-click fix. Nothing speculative is applied.
 - **Mentorship translation layer** — raw Python parser messages are rewritten into calm, beginner-friendly guidance.
-- **AST-isolated validation** — every candidate fix is verified in isolation before being surfaced to the user.
+- **AST-isolated validation** — candidate fixes are validated in isolation before being surfaced to the user.
 
 <div align="center">
 
@@ -58,7 +58,7 @@ ACQR takes a different approach: **explain the error, teach the concept, guide t
 
 ## Architecture
 
-ACQR runs a deterministic three-stage pipeline. No untrusted code is ever executed.
+ACQR focuses on static analysis workflows and avoids executing user code during diagnostics.
 
 ```mermaid
 graph TD
