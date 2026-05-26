@@ -15,7 +15,7 @@
 
 <br />
 
-### [⚡ Launch Live Web Demo](https://acqr.vercel.app)
+### [⚡ Launch Live Web Demo](https://acqr-kappa.vercel.app/)
 
 ---
 
