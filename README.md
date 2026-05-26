@@ -19,7 +19,7 @@
 
 <br />
 
-[![ACQR workspace]![alt text](image.png)](https://acqr-kappa.vercel.app/)
+[![ACQR workspace](https://acqr-kappa.vercel.app/)
 
 </div>
 
