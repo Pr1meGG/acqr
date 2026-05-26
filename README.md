@@ -20,7 +20,7 @@
 
 <br />
 
-[![ACQR workspace]![alt text](image.png)](https://acqr-kappa.vercel.app/)
+[![ACQR workspace — Monaco editor, diagnostic sidebar, and issue cards](https://raw.githubusercontent.com/Pr1meGG/acqr/main/frontend/public/hero.gif)](https://acqr-kappa.vercel.app/)
 
 </div>
 
@@ -63,6 +63,12 @@ ACQR takes a different approach: **explain the error, teach the concept, guide t
 - **Deterministic auto-fix pipeline** — safe, unambiguous syntax errors (missing colons, unclosed strings, mismatched brackets) get a one-click fix. Nothing speculative is applied.
 - **Mentorship translation layer** — raw Python parser messages are rewritten into calm, beginner-friendly guidance.
 - **AST-isolated validation** — every candidate fix is verified in isolation before being surfaced to the user.
+
+<div align="center">
+
+*Auto-fix in action — [▶ watch the demo](https://raw.githubusercontent.com/Pr1meGG/acqr/main/frontend/public/gif.mp4)*
+
+</div>
 
 ---
 
