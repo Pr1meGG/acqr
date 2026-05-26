@@ -4,7 +4,7 @@ const SEVERITY = {
   error:   {
     border:  "border-l-rose-500",
     glow:    "rgba(244,63,94,0.15)",
-    label:   "CODE BLOCKED 🛑",
+    label:   "REPAIR NEEDED 🛑",
     tone:    "Let's fix this blocking error first so Python can run your code!",
     headlineColor: "text-rose-400",
   },
