@@ -1,170 +1,135 @@
-<div align="center">
+# ACQR
 
-# 💎 ACQR
+A quiet tutor for Python.
 
-### **AI-powered educational debugging assistant for beginner programmers**
+Paste a few lines. ACQR reads them with you — what the code is doing, the line that needs work, and how to fix it. It does not write the program for you. It does not shout compiler output. It teaches.
 
-*Open-source. Mentorship-first. Built to teach, not to replace.*
-
-<br />
-
-[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react)](https://react.dev)
-[![Monaco Editor](https://img.shields.io/badge/Monaco_Editor-007ACC?style=flat-square&logo=visual-studio-code)](https://microsoft.github.io/monaco-editor/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-
-<br />
-
-**[⚡ Try the Live Demo →](https://acqr-kappa.vercel.app/)**
-
-<br />
-
-[![ACQR workspace — Monaco editor, diagnostic sidebar, and issue cards](https://raw.githubusercontent.com/Pr1meGG/acqr/main/frontend/public/hero.gif)](https://acqr-kappa.vercel.app/)
-
-</div>
+[Live demo](https://acqr-kappa.vercel.app/)
 
 ---
 
-## Why ACQR Exists
+## Why it exists
 
-Most AI coding tools write code *for* you. For beginners, that creates two problems:
+Most AI coding tools write code for you. For someone just starting, that leaves two holes:
 
-- **Errors stay mysterious.** Copy-pasting a fix doesn't explain *why* it happened or how to avoid it next time.
-- **Compiler output is intimidating.** Messages like `unexpected EOF` or `IndentationError` cause anxiety before understanding.
+- A pasted fix never explains why the error happened, or how to avoid it next time.
+- Messages like `unexpected EOF` or `IndentationError` scare before they teach.
 
-ACQR takes a different approach: **explain the error, teach the concept, guide the fix.** It acts as a patient pair programmer—translating compiler output into plain language, grounding concepts in real-world analogies, and providing step-by-step debug guidance rather than handing over answers.
-
----
-
-## Features
-
-**Workspace**
-- **Bi-directional Monaco sync** — clicking a line scrolls to its diagnostic card; clicking a card focuses the line in the editor.
-- **Expandable learning drawers** — each issue opens into an ELI5 explanation, a real-world analogy, and an interactive debug checklist.
-- **Skeleton loading states** — layout-matched skeletons keep the UI stable while analysis runs.
-
-**Analysis Engine**
-- **Deterministic auto-fix pipeline** — safe, unambiguous syntax errors (missing colons, unclosed strings, mismatched brackets) get a one-click fix. Nothing speculative is applied.
-- **Mentorship translation layer** — raw Python parser messages are rewritten into calm, beginner-friendly guidance.
-- **AST-isolated validation** — candidate fixes are validated in isolation before being surfaced to the user.
-
-<div align="center">
-
-*Auto-fix in action — [▶ watch the demo](https://raw.githubusercontent.com/Pr1meGG/acqr/main/frontend/public/gif.mp4)*
-
-</div>
+ACQR sits next to the editor. It translates the parser into plain language, grounds the concept in a mental model, and walks through the repair — instead of just handing over the answer.
 
 ---
 
-## Architecture
+## Workspace
 
-ACQR focuses on static analysis workflows and avoids executing user code during diagnostics.
+Code on the left. Lesson on the right. An interactive terminal docks at the bottom when you need it.
+
+- **Interactive Execution:** The built-in terminal isn't just a static log. Powered by WebSockets and `xterm.js`, it supports fully interactive execution (like `input()` prompts) and streams outputs in real-time.
+- **Contextual Lessons:** Click a marked line and the matching diagnostic comes into view. Click a card and the editor focuses that line.
+- **Deep Explanations:** Each issue opens into what the line is doing, why it fails, a mental model, and a short checklist.
+- **Jank-Free UI:** Layout-matched skeletons hold the pane while analysis runs. The page does not jump.
+
+---
+
+## Analysis
+
+ACQR diagnoses without executing your code.
 
 ```mermaid
 graph TD
-    A[User Python Code] --> B[AST Parser Gate]
-    B -- Syntax Error --> C[Heuristic Repair Engine]
-    C --> D[BPEID Educational Layer]
-    B -- Clean AST --> E[Structural Linting Engine]
-    E --> F[Static Heuristic Rules]
+    A["User Python"] --> B["AST parser gate"]
+    B -- "Syntax error" --> C["Heuristic repair"]
+    C --> D["Educational layer"]
+    B -- "Clean AST" --> E["Structural lint"]
+    E --> F["Static heuristics"]
     F --> D
-    D --> G[Client UI Payload]
+    D --> G["Client payload"]
 ```
 
-**1. UI Layer — React + Tailwind + Monaco**
-`@monaco-editor/react` with custom decoration providers. A synchronized scroll registry links editor cursor state to sidebar card positions.
+**Parser gate.** Python `ast` parses the snippet. If the tree cannot be built, a heuristic pass still looks for missing colons, unclosed strings, and mismatched brackets.
 
-**2. Static Analysis Layer — FastAPI + AST**
-Python's native `ast` library parses code without executing it. Multi-pass regex scanners handle non-AST failures (whitespace shifts, unclosed strings).
+**Repair.** A fix is only offered after it parses in isolation. Nothing speculative is applied. Block headers such as `if x > 5:` are checked with a temporary `pass` body so isolation does not reject a valid header.
 
-**3. Educational Retrieval Layer — BPEID**
-The Beginner Pedagogical Error Index Database maps parser codes to structured records: ELI5 explanations, analogies, ASCII diagrams, and debug checklists.
+**Lesson.** Parser codes map to structured records: a plain-language explanation, an analogy, a small diagram, and a debug checklist.
+
+```
+Syntax error → simulate fix → isolate the line → AST parse → surface Apply fix
+```
 
 ---
 
-## Auto-Fix Pipeline
+## Severity
 
-Fixes follow one rule: **never speculate.** A fix is only surfaced after passing AST validation in isolation.
+| Tier | Label | Meaning |
+| --- | --- | --- |
+| High | Repair needed | Blocking syntax. Python cannot run yet. |
+| Medium | Logical heads-up | Parses, but is likely to crash or misbehave. |
+| Low | Tidy hint | It runs. A small optimization or improvement is available. |
 
-```
-Syntax Error → Simulate Fix → Isolate Line → AST Parse → Surface "Fix this for me ⚡"
-```
-
-Block headers like `if x > 5:` are validated with a temporary `pass` body (`if x > 5:\n    pass`) to avoid false negatives in isolation mode.
-
----
-
-## Diagnostic Severity
-
-| Tier | Label | What it means |
-| :--- | :--- | :--- |
-| High | `REPAIR NEEDED 🛑` | Blocking syntax — Python can't run yet. |
-| Medium | `LOGICAL HEADS-UP ⚠️` | Parses fine, but likely to crash or misbehave at runtime. |
-| Low | `TIDY HINT 💡` | Code works. Minor style improvement available. |
+Low-severity notes (like optimization hacks) stay folded. They are not dressed up as scary errors.
 
 ---
 
-## Tech Stack
+## Stack
 
 | Layer | Tools |
-| :--- | :--- |
-| Frontend | React 19, Vite, JavaScript (ES6+), Tailwind CSS |
-| Editor | Monaco Editor (`@monaco-editor/react`) |
-| Backend | FastAPI, Uvicorn |
-| Analysis | Python `ast`, multi-pass regex heuristics |
+| --- | --- |
+| Studio | React, Vite, JavaScript |
+| Editor | Monaco (`@monaco-editor/react`) |
+| Terminal | `xterm.js` |
+| Styles | Vanilla CSS |
+| API | FastAPI, Uvicorn, WebSockets |
+| Analysis | Python `ast`, multi-pass heuristics |
 
 ---
 
-## Quickstart
+## Run it locally
+
+Node 18+ and Python 3.10+.
 
 ```bash
-# Backend
+# API
 cd backend
-python3 -m venv venv && source venv/bin/activate
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
-
-# Frontend — separate terminal
-cd frontend
-npm install && npm run dev
 ```
 
-Frontend: `http://localhost:5173` · Backend: `http://127.0.0.1:8000`
+```bash
+# Studio
+cd frontend
+npm install
+npm run dev
+```
+
+Studio: `http://localhost:5173`  
+API: `http://127.0.0.1:8000`
 
 ---
 
-## Roadmap
+## Try it
 
-- [ ] Multi-file AST context — track variable declarations across local imports
-- [ ] Safe rename refactoring — update all references without breaking AST structure
-- [ ] BPEID expansion — broaden error schema coverage for runtime and logical error classes
+Open the [demo](https://acqr-kappa.vercel.app/) and paste:
 
----
-
-## Try It
-
-Open the [live demo](https://acqr-kappa.vercel.app/) and paste one of these:
-
-**Syntax repair**
 ```python
 if x > 5
   print("Value is high")
 ```
-Hit **Analyze** → review the `REPAIR NEEDED` card → click **Fix this for me ⚡**. The colon is inserted and the indent corrected in one step.
 
-**Bi-directional sync**
-Click an underlined error in the editor → the sidebar scrolls to the matching card. Click a card → the editor focuses and highlights the exact line.
+Press **Review**. Read the repair card. **Apply fix** inserts the colon and corrects the indent in one step.
 
-**Mental model drawer**
-Paste `def append_to(item, list=[]):` and open the **Why? 🤔** drawer for a conceptual breakdown of mutable default arguments.
+Paste `def append_to(item, list=[]):` and open **Why it fails** for a lesson on mutable default arguments.
 
 ---
 
-## Resume
+## Next
 
-> *"Open-source educational debugging tool that translates Python compiler errors into structured analogies, interactive checklists, and AST-validated deterministic fixes."*
+- Multi-file AST context across local imports
+- Safe rename that updates every reference without breaking the tree
+- Broader coverage for runtime and logical error classes
 
-- Engineered a multi-stage static analysis backend (FastAPI + `ast` + regex) that diagnoses syntax errors without executing untrusted code.
-- Built a bi-directional cursor sync system in React binding Monaco Editor line state to sidebar scroll position.
-- Developed a relaxed-mode AST validation sandbox for isolated line repair, significantly expanding deterministic auto-fix coverage.
-- Authored a client-side error translation layer that rewrites raw compiler output into plain-language explanations and interactive debug checklists.
+---
+
+## License
+
+MIT
