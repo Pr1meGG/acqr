@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 96" role="img" aria-label="ACQR">
+  <rect width="420" height="96" fill="#0C0B0A"/>
+  <rect x="20" y="22" width="28" height="24" fill="#C44A28"/>
+  <rect x="20" y="50" width="28" height="16" fill="#B8924A"/>
+  <text
+    x="64"
+    y="58"
+    fill="#CFC6B8"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="42"
+    font-weight="600"
+    letter-spacing="-1.2"
+  >ACQR</text>
+  <text
+    x="196"
+    y="56"
+    fill="#8A8176"
+    font-family="ui-monospace, 'IBM Plex Mono', monospace"
+    font-size="11"
+    letter-spacing="3.2"
+  >CODE REVIEW</text>
+</svg>

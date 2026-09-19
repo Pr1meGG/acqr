@@ -1,6 +1,10 @@
 <div align="center">
 
-# ACQR
+<a href="https://acqr-kappa.vercel.app/">
+  <img src="https://raw.githubusercontent.com/Pr1meGG/acqr/main/logo/lockup.svg" alt="ACQR Logo" width="380" />
+</a>
+
+<br />
 
 ### A quiet tutor for Python.
 

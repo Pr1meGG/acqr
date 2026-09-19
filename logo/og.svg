@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="ACQR">
+  <rect width="1200" height="630" fill="#0C0B0A"/>
+  <rect width="1200" height="8" fill="#C44A28"/>
+  <rect y="8" width="400" height="8" fill="#B8924A"/>
+  <rect y="8" width="160" height="8" x="400" fill="#8D7358"/>
+  <rect x="96" y="210" width="72" height="64" fill="#C44A28"/>
+  <rect x="96" y="286" width="72" height="44" fill="#B8924A"/>
+  <text
+    x="196"
+    y="292"
+    fill="#CFC6B8"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="120"
+    font-weight="600"
+    letter-spacing="-4"
+  >ACQR</text>
+  <text
+    x="96"
+    y="390"
+    fill="#8A8176"
+    font-family="ui-sans-serif, system-ui, sans-serif"
+    font-size="28"
+    letter-spacing="6"
+  >A QUIET TUTOR FOR PYTHON</text>
+</svg>

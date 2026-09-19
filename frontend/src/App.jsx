@@ -78,7 +78,7 @@ export default function App() {
 
       <header className="top">
         <div className="brand">
-          <span className="mark" aria-hidden="true"></span>
+          <img src="/logo/mark-on-dark.svg" alt="ACQR Logo" className="brand-logo-mark" style={{ height: "22px", width: "auto" }} />
           <div className="brand-type">
             <span className="wordmark">ACQR</span>
             <span className="brand-meta">Code Review</span>
