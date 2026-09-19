@@ -6,9 +6,7 @@ import ast
 import re
 from typing import List, Dict, Any
 from services.ai_explainer import generate_llm_insights
-from services.intent_engine import detect_intent_mismatch
 from services.feedback_engine import adjust_confidence
-from services.retriever import find_bpeid_record
 
 # ---------------------------------------------------------------------------
 # Pylint runner
@@ -807,8 +805,7 @@ def analyze_code(code: str) -> Dict[str, List[Dict[str, Any]]]:
                 if repaired_sugg:
                     issue["suggestion"] = repaired_sugg
 
-            # Look up BPEID records for Layer 1 syntax errors
-            bpeid_rec = find_bpeid_record(None, raw_msg)
+            bpeid_rec = None
 
             err_item = {
                 "issue_key"        : issue_key,
@@ -848,9 +845,8 @@ def analyze_code(code: str) -> Dict[str, List[Dict[str, Any]]]:
         + detect_runtime_risks(code)
         + detect_logical_and_lint_issues(code)
     )
-    intent_issues = detect_intent_mismatch(code)
+    intent_issues = []
     print("\n[DEBUG] HEURISTIC ISSUES:", heuristic_issues)
-    print("[DEBUG] INTENT ISSUES    :", intent_issues)
 
     # ═══════════════════════════════════════════════════════════════════════════
     # LAYER 3 — Pylint (lint only — runs AFTER syntax passes)
@@ -1003,8 +999,7 @@ def analyze_code(code: str) -> Dict[str, List[Dict[str, Any]]]:
         raw_err = issue.get("raw_err", {})
         message_id = raw_err.get("message-id") if raw_err else None
         
-        # BPEID matching
-        bpeid_rec = find_bpeid_record(message_id, raw_msg)
+        bpeid_rec = None
 
         err_item = {
             "issue_key": issue_key,

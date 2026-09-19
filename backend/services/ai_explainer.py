@@ -28,39 +28,15 @@ def is_valid_python(code):
 
 
 async def _generate_with_retry(model, prompt: str):
-    delays = [1.5, 3.0, 4.5]
-    max_attempts = len(delays) + 1
-
-    for attempt in range(max_attempts):
-        try:
-            print(f"[AI Layer] Attempt {attempt + 1}/{max_attempts}...")
-            response = await model.generate_content_async(
-                prompt,
-                generation_config={"response_mime_type": "application/json"}
-            )
-            return response.text
-        except Exception as e:
-            error_str = str(e).lower()
-            is_transient = (
-                "429" in error_str or "503" in error_str or "504" in error_str or
-                "rate limit" in error_str or "quota" in error_str or "unavailable" in error_str or
-                isinstance(e, (google_exceptions.ResourceExhausted, google_exceptions.ServiceUnavailable, google_exceptions.RetryError))
-            )
-            
-            print(f"[AI Layer] Error type: {type(e).__name__} - {e}")
-            
-            if is_transient and attempt < len(delays):
-                delay = delays[attempt]
-                print(f"[AI Layer] Transient error detected. Retrying in {delay}s...")
-                await asyncio.sleep(delay)
-            else:
-                if is_transient:
-                    print("[AI Layer] Max retries reached. Fallback triggered.")
-                else:
-                    print("[AI Layer] Non-transient error. Failing fast. Fallback triggered.")
-                return None
-                
-    return None
+    try:
+        response = await model.generate_content_async(
+            prompt,
+            generation_config={"response_mime_type": "application/json"}
+        )
+        return response.text
+    except Exception as e:
+        print(f"[AI Layer] Error generating content: {type(e).__name__} - {e}")
+        return None
 
 
 def generate_llm_insights(code: str, static_issues: list = None):

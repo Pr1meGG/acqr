@@ -14,5 +14,9 @@
     "syntax:parsing failed: 'invalid syntax (tmpogpt2r9g, line 3)'": {
         "total": 1,
         "correct": 0
+    },
+    "test_verification_key": {
+        "total": 1,
+        "correct": 1
     }
 }
