@@ -1,132 +1,154 @@
-# ACQR
+<div align="center">
 
-A quiet tutor for Python.
+# 💎 ACQR
 
-Paste a few lines. ACQR reads them with you — what the code is doing, the line that needs work, and how to fix it. It does not write the program for you. It does not shout compiler output. It teaches.
+### **AI-powered educational debugging assistant for beginner programmers**
 
-[Live demo](https://acqr-kappa.vercel.app/)
+*Open-source. Mentorship-first. Built to teach, not to replace.*
 
----
+<br />
 
-## Why it exists
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react)](https://react.dev)
+[![Monaco Editor](https://img.shields.io/badge/Monaco_Editor-007ACC?style=flat-square&logo=visual-studio-code)](https://microsoft.github.io/monaco-editor/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-Most AI coding tools write code for you. For someone just starting, that leaves two holes:
+<br />
 
-- A pasted fix never explains why the error happened, or how to avoid it next time.
-- Messages like `unexpected EOF` or `IndentationError` scare before they teach.
+**[⚡ Try the Live Demo →](https://acqr-kappa.vercel.app/)**
 
-ACQR sits next to the editor. It translates the parser into plain language, grounds the concept in a mental model, and walks through the repair — instead of just handing over the answer.
+<br />
 
----
+[![ACQR workspace — Monaco editor, diagnostic sidebar, and issue cards](https://raw.githubusercontent.com/Pr1meGG/acqr/main/frontend/public/hero.gif)](https://acqr-kappa.vercel.app/)
 
-## Workspace
-
-Code on the left. Lesson on the right. An interactive terminal docks at the bottom when you need it.
-
-- **Interactive Execution:** The built-in terminal isn't just a static log. Powered by WebSockets and `xterm.js`, it supports fully interactive execution (like `input()` prompts) and streams outputs in real-time.
-- **Contextual Lessons:** Click a marked line and the matching diagnostic comes into view. Click a card and the editor focuses that line.
-- **Deep Explanations:** Each issue opens into what the line is doing, why it fails, a mental model, and a short checklist.
-- **Jank-Free UI:** Layout-matched skeletons hold the pane while analysis runs. The page does not jump.
+</div>
 
 ---
 
-## Analysis
+## Why ACQR Exists
 
-ACQR diagnoses without executing your code.
+Most AI coding tools write code *for* you. For beginners, that creates two problems:
+
+- **Errors stay mysterious.** Copy-pasting a fix doesn't explain *why* it happened or how to avoid it next time.
+- **Compiler output is intimidating.** Messages like `unexpected EOF` or `IndentationError` cause anxiety before understanding.
+
+ACQR takes a different approach: **explain the error, teach the concept, guide the fix.** It acts as a patient pair programmer—translating compiler output into plain language, grounding concepts in real-world analogies, and providing step-by-step debug guidance rather than handing over answers.
+
+---
+
+## Features
+
+**Workspace**
+- **Interactive Terminal** — Powered by `xterm.js` and WebSockets, you can run fully interactive Python scripts (like using `input()`) seamlessly inside the browser.
+- **Bi-directional Monaco sync** — clicking a line scrolls to its diagnostic card; clicking a card focuses the line in the editor.
+- **Expandable learning drawers** — each issue opens into an ELI5 explanation, a real-world analogy, and an interactive debug checklist.
+- **Optimization Hacks** — Minor inefficiencies (like using floats for integer math) are elegantly tucked away as "Optimization Hacks" rather than presented as scary errors.
+
+**Analysis Engine**
+- **Deterministic auto-fix pipeline** — safe, unambiguous syntax errors (missing colons, unclosed strings) get a one-click fix. Nothing speculative is applied.
+- **Mentorship translation layer** — raw Python parser messages are rewritten into calm, beginner-friendly guidance.
+- **AST-isolated validation** — candidate fixes are validated in isolation before being surfaced to the user.
+
+---
+
+## Architecture
+
+ACQR focuses on powerful static analysis workflows and interactive execution via WebSockets.
 
 ```mermaid
 graph TD
-    A["User Python"] --> B["AST parser gate"]
-    B -- "Syntax error" --> C["Heuristic repair"]
-    C --> D["Educational layer"]
-    B -- "Clean AST" --> E["Structural lint"]
-    E --> F["Static heuristics"]
+    A[User Python Code] --> B[AST Parser Gate]
+    B -- Syntax Error --> C[Heuristic Repair Engine]
+    C --> D[Educational Layer]
+    B -- Clean AST --> E[Structural Linting Engine]
+    E --> F[Static Heuristic Rules]
     F --> D
-    D --> G["Client payload"]
+    D --> G[Client UI Payload]
 ```
 
-**Parser gate.** Python `ast` parses the snippet. If the tree cannot be built, a heuristic pass still looks for missing colons, unclosed strings, and mismatched brackets.
+**1. UI Layer — React + Vanilla CSS + Monaco + Xterm**
+Custom glassmorphism design system using highly polished Vanilla CSS. `@monaco-editor/react` handles the code, while `@xterm/xterm` handles the interactive runtime console.
 
-**Repair.** A fix is only offered after it parses in isolation. Nothing speculative is applied. Block headers such as `if x > 5:` are checked with a temporary `pass` body so isolation does not reject a valid header.
+**2. Static Analysis Layer — FastAPI + AST**
+Python's native `ast` library parses code without executing it. Multi-pass regex scanners handle non-AST failures (whitespace shifts, unclosed strings).
 
-**Lesson.** Parser codes map to structured records: a plain-language explanation, an analogy, a small diagram, and a debug checklist.
-
-```
-Syntax error → simulate fix → isolate the line → AST parse → surface Apply fix
-```
+**3. Interactive Execution Layer — WebSockets**
+FastAPI WebSockets streams a true `subprocess` environment in real-time back to the frontend, supporting native `input()` interactions and live `stdout`.
 
 ---
 
-## Severity
+## Auto-Fix Pipeline
 
-| Tier | Label | Meaning |
-| --- | --- | --- |
-| High | Repair needed | Blocking syntax. Python cannot run yet. |
-| Medium | Logical heads-up | Parses, but is likely to crash or misbehave. |
-| Low | Tidy hint | It runs. A small optimization or improvement is available. |
+Fixes follow one rule: **never speculate.** A fix is only surfaced after passing AST validation in isolation.
 
-Low-severity notes (like optimization hacks) stay folded. They are not dressed up as scary errors.
+```
+Syntax Error → Simulate Fix → Isolate Line → AST Parse → Surface "Apply Fix ⚡"
+```
+
+Block headers like `if x > 5:` are validated with a temporary `pass` body to avoid false negatives in isolation mode.
 
 ---
 
-## Stack
+## Diagnostic Severity
+
+| Tier | Label | What it means |
+| :--- | :--- | :--- |
+| High | `REPAIR NEEDED 🛑` | Blocking syntax — Python can't run yet. |
+| Medium | `LOGICAL HEADS-UP ⚠️` | Parses fine, but likely to crash or misbehave at runtime. |
+| Low | `OPTIMIZATION HACK ✨` | Code works. A small, advanced improvement is available. |
+
+---
+
+## Tech Stack
 
 | Layer | Tools |
-| --- | --- |
-| Studio | React, Vite, JavaScript |
-| Editor | Monaco (`@monaco-editor/react`) |
-| Terminal | `xterm.js` |
-| Styles | Vanilla CSS |
-| API | FastAPI, Uvicorn, WebSockets |
-| Analysis | Python `ast`, multi-pass heuristics |
+| :--- | :--- |
+| Frontend | React 19, Vite, JavaScript (ES6+), Vanilla CSS |
+| Editor / Console | Monaco Editor (`@monaco-editor/react`), Xterm.js |
+| Backend | FastAPI, Uvicorn, WebSockets |
+| Analysis | Python `ast`, multi-pass regex heuristics |
 
 ---
 
-## Run it locally
-
-Node 18+ and Python 3.10+.
+## Quickstart
 
 ```bash
-# API
+# Backend
 cd backend
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
-```
 
-```bash
-# Studio
+# Frontend — separate terminal
 cd frontend
-npm install
-npm run dev
+npm install && npm run dev
 ```
 
-Studio: `http://localhost:5173`  
-API: `http://127.0.0.1:8000`
+Frontend: `http://localhost:5173` · Backend: `http://127.0.0.1:8000`
 
 ---
 
-## Try it
+## Roadmap
 
-Open the [demo](https://acqr-kappa.vercel.app/) and paste:
+- [ ] Multi-file AST context — track variable declarations across local imports
+- [ ] Safe rename refactoring — update all references without breaking AST structure
+- [ ] Broader coverage for runtime and logical error classes
 
+---
+
+## Try It
+
+Open the [live demo](https://acqr-kappa.vercel.app/) and paste one of these:
+
+**Syntax repair**
 ```python
 if x > 5
   print("Value is high")
 ```
+Hit **Review** → review the card → click **Apply fix**. The colon is inserted and the indent corrected in one step.
 
-Press **Review**. Read the repair card. **Apply fix** inserts the colon and corrects the indent in one step.
-
-Paste `def append_to(item, list=[]):` and open **Why it fails** for a lesson on mutable default arguments.
-
----
-
-## Next
-
-- Multi-file AST context across local imports
-- Safe rename that updates every reference without breaking the tree
-- Broader coverage for runtime and logical error classes
+**Mental model drawer**
+Paste `def append_to(item, list=[]):` and open the **Why it fails** drawer for a conceptual breakdown of mutable default arguments.
 
 ---
 
